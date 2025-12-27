@@ -831,13 +831,22 @@
       transform: translateX(-50%) translateY(0);
     }
 
+    /* =========================
+       Responsive sizing & spacing
+       ========================= */
     @media (max-width: 600px){
       :root{ --colw: 162px; --timew: 72px; --slotPxBase: 40; }
     }
 
     @media (max-width: 520px){
-      :root{ --colw: 156px; --timew: 70px; --slotPxBase: 38; }
-      .topbarRight{ gap: 8px; }
+      :root{ --colw: 156px; --timew: 70px; --slotPxBase: 38; --radius: 18px; --headh: 46px; }
+      .app{ padding: 8px; }
+      .topbar{ padding: 8px 10px; grid-template-columns: 1fr; height: auto; align-items: stretch; }
+      .topbarRight{ gap: 8px; justify-content: flex-start; }
+      .field{ flex: 1 1 220px; }
+      .headerCell{ padding: 8px 8px 6px; }
+      .headerName{ font-size: 12px; }
+      .headerMeta{ font-size: 10px; }
       .btn{ padding: 10px 10px; }
     }
 
@@ -845,14 +854,25 @@
       :root{ --colw: 142px; --timew: 64px; --slotPxBase: 36; }
     }
 
+    @media (max-width: 460px){
+      .topbar{ padding: 6px 8px; }
+      .headerCell{ padding: 6px 6px 4px; }
+    }
+
     @media (max-width: 420px){
       :root{ --colw: 132px; --timew: 60px; --slotPxBase: 34; }
+      .field label{ display:none; }
+      .btn{ padding: 10px 10px; font-size: 12px; }
+      .topbar{ padding: 6px 8px; }
     }
 
     @media (max-width: 380px){
       :root{ --colw: 124px; --timew: 58px; --slotPxBase: 32; }
+      .topbar{ padding: 4px 6px; }
+      .headerCell{ padding: 6px 6px 4px; }
+      .title{ font-size: 13px; }
     }
-  
+
     /* =========================
        Google Sites iframe (mobile) fixes
        ========================= */
@@ -866,56 +886,9 @@
     }
     .topbarRight::-webkit-scrollbar{ display:none; }
 
-    /* iOS / embedded viewport 안정化 */
+    /* iOS / embedded viewport 안정화 */
     body{ min-height: 100dvh; }
     .app{ min-height: 100dvh; }
-
-    @media (max-width: 520px){
-      .app{ padding: 10px; }
-      .topbar{
-        grid-template-columns: 1fr;
-        height: auto;
-        align-items: stretch;
-      }
-      .topbarRight{
-        justify-content: flex-start;
-        gap: 8px;
-      }
-      .field{ flex: 1 1 220px; }
-    }
-
-    @media (max-width: 420px){
-      .field label{ display:none; }
-      .btn{ padding: 10px 10px; font-size: 12px; }
-      .topbar{ padding: 6px 8px; }
-    }
-
-    @media (max-width: 460px){
-      .topbar{ padding: 6px 8px; }
-      .headerCell{ padding: 6px 6px 4px; }
-    }
-
-    @media (max-width: 380px){
-      .topbar{ padding: 4px 6px; }
-      .headerCell{ padding: 6px 6px 4px; }
-      .title{ font-size: 13px; }
-    }
-
-  
-    /* =========================
-       Mobile compact (show more timeline)
-       ========================= */
-    @media (max-width: 520px){
-      :root{
-        --radius: 18px;
-        --headh: 46px;
-      }
-      .app{ padding: 8px; }
-      .topbar{ padding: 8px 10px; }
-      .headerCell{ padding: 8px 8px 6px; }
-      .headerName{ font-size: 12px; }
-      .headerMeta{ font-size: 10px; }
-    }
 
     /* =========================
        Hour stamps inside each room column
@@ -1932,7 +1905,8 @@
       state.days = normalizeDays_(res.data.days || []);
       state.bookings = res.data.bookings || [];
       state.requests = res.data.requests || [];
-      state.isAdmin = !!(res.data.isAdmin || state.adminKey);
+      state.isAdmin = !!res.data.isAdmin;
+      if (!state.isAdmin) state.adminKey = "";
 
       updateAdminToggleUI_();
 
@@ -1976,7 +1950,8 @@
       state.days = normalizeDays_(res.data.days || []);
       state.bookings = res.data.bookings || [];
       state.requests = res.data.requests || [];
-      state.isAdmin = !!(res.data.isAdmin || state.adminKey);
+      state.isAdmin = !!res.data.isAdmin;
+      if (!state.isAdmin) state.adminKey = "";
       el.newBtn.style.display = state.isAdmin ? "" : "none";
 
       updateAdminToggleUI_();
@@ -2759,12 +2734,15 @@
 
       const pwd = prompt("管理者パスワードを入力してください");
       if (pwd === null) return;
-      if (pwd !== "admin") {
-        toast("パスワードが違います");
+
+      const res = await runGAS("adminLogin", pwd);
+      if (!res || !res.ok || !res.adminToken) {
+        const msg = (res && res.message) ? res.message : "ログインに失敗しました";
+        toast(msg);
         return;
       }
 
-      state.adminKey = pwd;
+      state.adminKey = res.adminToken;
       state.isAdmin = true;
       updateAdminToggleUI_();
       el.newBtn.style.display = "";
