@@ -1,0 +1,2714 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>授業スケジュール</title>
+  <style>
+    :root{
+      --timew: 78px;
+      --colw: 172px;
+      --headh: 50px;
+      --topbarh: 58px;
+
+      --radius: 20px;
+
+      --text: rgba(10,10,12,0.92);
+      --muted: rgba(10,10,12,0.56);
+
+      --accent: rgba(10,132,255,1);
+      --accent-weak: rgba(10,132,255,0.14);
+      --danger: rgba(255,69,58,1);
+      --danger-weak: rgba(255,69,58,0.14);
+
+      --border: rgba(0,0,0,0.10);
+      --border-strong: rgba(0,0,0,0.16);
+
+      --glass: rgba(255,255,255,0.66);
+      --glass2: rgba(255,255,255,0.48);
+
+      --shadow-window: 0 26px 70px rgba(0,0,0,0.22);
+      --shadow-sm: 0 10px 26px rgba(0,0,0,0.14);
+      --shadow-control: 0 8px 18px rgba(0,0,0,0.10);
+
+      --ease-out: cubic-bezier(.2,.9,.2,1);
+      --ease: cubic-bezier(.2,.7,.2,1);
+      --dur-1: 160ms;
+      --dur-2: 220ms;
+
+      --slotMin: 15;
+      --pxPerMin: 3;
+      --gridH: 2000px;
+      --slotPx: 45px;
+      --hourPx: 180px;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Arial, system-ui, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(1200px 700px at 16% 12%, rgba(120,170,255,0.26), transparent 60%),
+        radial-gradient(1050px 650px at 85% 18%, rgba(255,140,170,0.22), transparent 60%),
+        radial-gradient(900px 700px at 55% 92%, rgba(120,255,200,0.16), transparent 60%),
+        linear-gradient(180deg, rgba(246,247,250,1), rgba(232,236,245,1));
+      overflow: hidden;
+    }
+
+    body::before{
+      content:"";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.06;
+      background-image:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='.35'/%3E%3C/svg%3E");
+      mix-blend-mode: soft-light;
+    }
+
+    .app{ height: 100%; padding: 16px; display: flex; }
+    .window{
+      width: 100%;
+      height: 100%;
+      border-radius: var(--radius);
+      border: 1px solid var(--border-strong);
+      background: rgba(255,255,255,0.22);
+      box-shadow: var(--shadow-window);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .topbar{
+      height: var(--topbarh);
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      background: var(--glass);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(26px);
+      -webkit-backdrop-filter: blur(26px);
+      position: relative;
+    }
+
+    .topbarCenter{ display: flex; align-items: center; min-width: 0; }
+    .title{
+      font-weight: 760;
+      letter-spacing: 0.2px;
+      font-size: 14px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: rgba(10,10,12,0.86);
+    }
+
+    .topbarRight{ display: inline-flex; align-items: center; gap: 10px; }
+
+    .field{
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      min-height: 40px;
+      border-radius: 14px;
+      background: rgba(255,255,255,0.58);
+      border: 1px solid var(--border);
+      box-shadow: 0 1px 0 rgba(255,255,255,0.55) inset;
+    }
+    .field label{ font-size: 12px; color: var(--muted); white-space: nowrap; }
+    input[type="date"]{
+      appearance: none;
+      border: none;
+      background: transparent;
+      font: inherit;
+      color: var(--text);
+      padding: 0;
+      outline: none;
+      min-height: 24px;
+    }
+
+    .field select{
+      appearance: none;
+      border: none;
+      background: transparent;
+      font: inherit;
+      color: var(--text);
+      padding: 0;
+      outline: none;
+      min-height: 24px;
+    }
+
+
+    .btn{
+      appearance: none;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.62);
+      color: rgba(10,10,12,0.86);
+      padding: 10px 12px;
+      min-height: 40px;
+      border-radius: 14px;
+      font-weight: 700;
+      font-size: 13px;
+      line-height: 1;
+      box-shadow: var(--shadow-control);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      cursor: pointer;
+      user-select: none;
+      transition: transform var(--dur-1) var(--ease), box-shadow var(--dur-1) var(--ease), background var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease);
+    }
+    .btn:hover{ background: rgba(255,255,255,0.72); box-shadow: 0 10px 22px rgba(0,0,0,0.12); }
+    .btn:active{ transform: translateY(1px) scale(0.99); }
+    .btn.primary{
+      border-color: rgba(10,132,255,0.26);
+      background: var(--accent-weak);
+      color: rgba(10,10,12,0.90);
+    }
+    .btn.primary:hover{ background: rgba(10,132,255,0.18); }
+    .btn.danger{ background: var(--danger-weak); border-color: rgba(255,69,58,0.22); }
+    .btn:disabled{ opacity: 0.55; cursor: default; box-shadow: none; transform: none; }
+
+    /* segmented control */
+    .seg{
+      display: inline-flex;
+      background: rgba(255,255,255,0.45);
+      border: 1px solid rgba(0,0,0,0.10);
+      border-radius: 999px;
+      padding: 3px;
+      gap: 3px;
+      box-shadow: 0 1px 0 rgba(255,255,255,0.55) inset;
+    }
+    .segBtn{
+      border: none;
+      background: transparent;
+      padding: 8px 10px;
+      min-height: 32px;
+      border-radius: 999px;
+      font-weight: 760;
+      font-size: 12px;
+      color: rgba(10,10,12,0.72);
+      cursor: pointer;
+      transition: background var(--dur-1) var(--ease), transform var(--dur-1) var(--ease);
+      user-select: none;
+      white-space: nowrap;
+    }
+    .segBtn:hover{ background: rgba(255,255,255,0.56); }
+    .segBtn.active{
+      background: rgba(255,255,255,0.78);
+      color: rgba(10,10,12,0.88);
+      box-shadow: 0 10px 22px rgba(0,0,0,0.10);
+    }
+
+    /* request card */
+    .request{
+      position: absolute;
+      left: 10px;
+      right: 10px;
+      border-radius: 14px;
+      border: 1px dashed rgba(94,92,230,0.55);
+      background: rgba(94,92,230,0.10);
+      box-shadow: 0 8px 18px rgba(0,0,0,0.06);
+      padding: 10px 12px;
+      cursor: pointer;
+      user-select: none;
+      overflow: hidden;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+    .request .rTitle{ font-weight: 820; font-size: 13px; line-height: 1.2; }
+    .request .rMeta{ margin-top: 6px; font-size: 11px; color: rgba(10,10,12,0.62); }
+
+    .btn:focus-visible,
+    input:focus-visible,
+    select:focus-visible{
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(10,132,255,0.28), var(--shadow-control);
+      border-color: rgba(10,132,255,0.36);
+    }
+
+    .scroll{
+      flex: 1;
+      min-height: 0;
+      overflow: auto;
+      position: relative;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
+      background: rgba(255,255,255,0.10);
+    }
+
+    .scroll::-webkit-scrollbar{ width: 12px; height: 12px; }
+    .scroll::-webkit-scrollbar-thumb{
+      background: rgba(0,0,0,0.18);
+      border-radius: 999px;
+      border: 3px solid rgba(255,255,255,0.20);
+      background-clip: padding-box;
+    }
+    .scroll::-webkit-scrollbar-corner{ background: transparent; }
+
+    .canvas{
+      /* 7日分を前提に最小幅を確保。広い画面では横幅いっぱいに伸ばす */
+      min-width: calc(var(--timew) + 7 * var(--colw));
+      width: 100%;
+    }
+
+    .headerRow{
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      display: flex;
+      width: 100%;
+      box-shadow: 0 10px 26px rgba(0,0,0,0.10);
+    }
+
+    .corner{
+      position: sticky;
+      left: 0;
+      z-index: 40;
+      width: var(--timew);
+      height: var(--headh);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      color: var(--muted);
+      background: var(--glass);
+      border-right: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+    }
+
+    .headers{
+      display: flex;
+      flex: 1 1 auto;
+      width: 100%;
+      height: var(--headh);
+      background: var(--glass);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+    }
+
+    .headerCell{
+      flex: 1 0 var(--colw);
+      min-width: var(--colw);
+      height: var(--headh);
+      padding: 10px 10px 8px;
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 2px;
+    }
+    .headerCell.today{
+      background: rgba(10,132,255,0.10);
+    }
+    .headerName{
+      font-weight: 780;
+      font-size: 13px;
+      line-height: 1.1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .headerMeta{
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .mainRow{ display: flex; width: 100%; min-height: var(--gridH); }
+
+    .timeCol{
+      position: sticky;
+      left: 0;
+      z-index: 20;
+      width: var(--timew);
+      height: var(--gridH);
+      background: var(--glass2);
+      border-right: 1px solid var(--border);
+      backdrop-filter: blur(22px);
+      -webkit-backdrop-filter: blur(22px);
+    }
+    .timeLabel{
+      position: absolute;
+      left: 0;
+      width: 100%;
+      height: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      color: rgba(10,10,12,0.52);
+      transform: translateY(-9px);
+      user-select: none;
+      pointer-events: none;
+    }
+
+    .colsWrap{ display: flex; flex: 1 1 auto; width: 100%; height: var(--gridH); }
+
+    /* ★重要：.col（先頭のドットが 1 個だけ） */
+    .col{
+      position: relative;
+      flex: 1 0 var(--colw);
+      min-width: var(--colw);
+      height: var(--gridH);
+      border-right: 1px solid rgba(0,0,0,0.07);
+
+      /* ★スクロール許可（縦横） */
+      touch-action: pan-x pan-y;
+
+      background-color: rgba(255,255,255,0.08);
+      background-image:
+        repeating-linear-gradient(
+          to bottom,
+          rgba(0,0,0,0.07) 0px,
+          rgba(0,0,0,0.07) 1px,
+          transparent 1px,
+          transparent var(--slotPx)
+        ),
+        repeating-linear-gradient(
+          to bottom,
+          rgba(0,0,0,0.12) 0px,
+          rgba(0,0,0,0.12) 1px,
+          transparent 1px,
+          transparent var(--hourPx)
+        );
+      transition: background-color var(--dur-1) var(--ease);
+    }
+    .col:hover{ background-color: rgba(255,255,255,0.14); }
+
+    /* ★ドラッグ選択中だけスクロール停止 */
+    html.selecting, html.selecting body{ user-select: none; }
+
+    html.selecting .col{ touch-action: none; }
+
+    .nowLine{
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, rgba(10,132,255,0.65), rgba(10,132,255,0.35));
+      box-shadow: 0 0 0 1px rgba(10,132,255,0.12);
+      pointer-events: none;
+      z-index: 6;
+    }
+    .nowDot{
+      position: absolute;
+      left: 6px;
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: rgba(10,132,255,0.92);
+      transform: translateY(-3px);
+      pointer-events: none;
+      z-index: 7;
+      box-shadow: 0 0 0 2px rgba(255,255,255,0.55);
+    }
+
+    .selection{
+      position: absolute;
+      left: 8px;
+      right: 8px;
+      border-radius: 14px;
+      border: 2px dashed rgba(0,0,0,0.18);
+      background: rgba(255,255,255,0.34);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      z-index: 12;
+      pointer-events: none;
+    }
+    .selectionLabel{
+      position: absolute;
+      top: 6px;
+      left: 6px;
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.82);
+      border: 1px solid rgba(0,0,0,0.12);
+      box-shadow: 0 1px 0 rgba(255,255,255,0.60) inset;
+      font-size: 11px;
+      font-weight: 700;
+      color: rgba(10,10,12,0.72);
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    .booking{
+      position: absolute;
+      left: 8px;
+      right: 8px;
+      border-radius: 16px;
+      padding: 10px 14px 10px 14px;
+      overflow: hidden;
+      cursor: pointer;
+      user-select: none;
+      z-index: 10;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.72), rgba(255,255,255,0.52)),
+        var(--bTint, rgba(10,132,255,0.08));
+      border: 1px solid rgba(0,0,0,0.10);
+      box-shadow:
+        0 18px 44px rgba(0,0,0,0.14),
+        0 1px 0 rgba(255,255,255,0.60) inset;
+      backdrop-filter: blur(18px) saturate(1.35);
+      -webkit-backdrop-filter: blur(18px) saturate(1.35);
+      transition:
+        transform var(--dur-1) var(--ease),
+        box-shadow var(--dur-1) var(--ease),
+        border-color var(--dur-1) var(--ease),
+        filter var(--dur-1) var(--ease);
+    }
+
+    .booking::before{
+      content:"";
+      position:absolute;
+      top: 10px;
+      bottom: 10px;
+      left: 10px;
+      width: 4px;
+      border-radius: 999px;
+      background: var(--bAccent, rgba(10,132,255,0.85));
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.35) inset;
+      opacity: 0.92;
+    }
+
+    .booking:hover{
+      transform: translateY(-1px);
+      border-color: rgba(0,0,0,0.14);
+      box-shadow:
+        0 22px 56px rgba(0,0,0,0.16),
+        0 1px 0 rgba(255,255,255,0.62) inset;
+    }
+
+    .booking:active{
+      transform: translateY(0px) scale(0.995);
+      filter: saturate(1.05);
+    }
+
+    .booking.normal{
+      --bTint: rgba(10,132,255,0.12);
+      --bAccent: rgba(10,132,255,0.92);
+    }
+
+    .booking.visitor{
+      --bTint: rgba(255,159,10,0.12);
+      --bAccent: rgba(255,159,10,0.92);
+    }
+
+    .bookingInner{
+      padding-left: 14px;
+      display: grid;
+      gap: 6px;
+    }
+
+    .bHead{
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      row-gap: 6px;
+      min-width: 0;
+    }
+
+    .bTimePill{
+      flex: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.54);
+      border: 1px solid rgba(0,0,0,0.10);
+      box-shadow: 0 1px 0 rgba(255,255,255,0.55) inset;
+      font-size: 11px;
+      font-weight: 760;
+      color: rgba(10,10,12,0.72);
+      letter-spacing: 0.2px;
+      font-feature-settings: "tnum" 1;
+      white-space: nowrap;
+      max-width: 100%;
+    }
+
+    .bBadge{
+      flex: none;
+      margin-left: auto;
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 7px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.40);
+      border: 1px solid rgba(0,0,0,0.10);
+      font-size: 10px;
+      font-weight: 820;
+      color: rgba(10,10,12,0.70);
+      white-space: nowrap;
+      max-width: 100%;
+    }
+
+    .bTitle{
+      font-weight: 860;
+      font-size: 13px;
+      line-height: 1.25;
+      color: rgba(10,10,12,0.90);
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .bFooter{
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .bUser{
+      min-width: 0;
+      font-size: 12px;
+      font-weight: 650;
+      color: rgba(10,10,12,0.62);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    @media (prefers-reduced-transparency: reduce){
+      .booking{
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+        background:
+          linear-gradient(180deg, rgba(255,255,255,0.92), rgba(255,255,255,0.86)),
+          var(--bTint, rgba(10,132,255,0.08));
+      }
+    }
+
+    .modalOverlay{
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      background: rgba(0,0,0,0.20);
+      z-index: 100;
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition: opacity var(--dur-2) var(--ease-out), visibility var(--dur-2) var(--ease-out);
+    }
+    .modalOverlay.show{
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+    }
+
+    .modal{
+      width: min(540px, 100%);
+      border-radius: 22px;
+      border: 1px solid rgba(255,255,255,0.22);
+      background: rgba(255,255,255,0.76);
+      box-shadow: var(--shadow-window);
+      backdrop-filter: blur(26px);
+      -webkit-backdrop-filter: blur(26px);
+      overflow: hidden;
+      transform: translateY(10px) scale(0.985);
+      opacity: 0;
+      transition: transform var(--dur-2) var(--ease-out), opacity var(--dur-2) var(--ease-out);
+    }
+    .modalOverlay.show .modal{ transform: translateY(0px) scale(1); opacity: 1; }
+
+    .modalHeader{
+      padding: 14px 16px 10px;
+      border-bottom: 1px solid rgba(0,0,0,0.10);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(255,255,255,0.45);
+    }
+    .modalTitle{
+      font-weight: 860;
+      font-size: 14px;
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .modalBody{ padding: 12px 16px 14px; display: grid; gap: 10px; }
+    .row{ display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+    .control{
+      display: grid;
+      gap: 6px;
+      padding: 10px 12px;
+      border-radius: 16px;
+      border: 1px solid rgba(0,0,0,0.10);
+      background: rgba(255,255,255,0.56);
+      box-shadow: 0 1px 0 rgba(255,255,255,0.55) inset;
+      transition: box-shadow var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease);
+    }
+    .control label{ font-size: 11px; color: var(--muted); }
+    .control input[type="text"], .control select{
+      appearance: none;
+      border: none;
+      outline: none;
+      background: transparent;
+      font: inherit;
+      font-size: 14px;
+      color: var(--text);
+      padding: 0;
+      min-height: 24px;
+    }
+    .control.invalid{
+      border-color: rgba(255,69,58,0.40);
+      box-shadow: 0 0 0 3px rgba(255,69,58,0.18), 0 1px 0 rgba(255,255,255,0.55) inset;
+    }
+
+    .mError{
+      display: none;
+      gap: 10px;
+      align-items: flex-start;
+      padding: 10px 12px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,69,58,0.26);
+      background: rgba(255,69,58,0.10);
+      box-shadow: 0 1px 0 rgba(255,255,255,0.50) inset;
+      color: rgba(120,0,0,0.92);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      animation: mErrIn 160ms var(--ease-out);
+    }
+    .mError.show{ display: flex; }
+    .mError .icon{
+      flex: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 999px;
+      background: rgba(255,69,58,0.20);
+      border: 1px solid rgba(255,69,58,0.25);
+      display: grid;
+      place-items: center;
+      font-weight: 900;
+      color: rgba(120,0,0,0.90);
+      line-height: 1;
+      margin-top: 1px;
+    }
+    .mError .msg{
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 1.35;
+      color: rgba(10,10,12,0.78);
+    }
+    @keyframes mErrIn{
+      from{ transform: translateY(-4px); opacity: 0; }
+      to{ transform: translateY(0); opacity: 1; }
+    }
+
+    .switchRow{
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 16px;
+      border: 1px solid rgba(0,0,0,0.10);
+      background: rgba(255,255,255,0.56);
+      box-shadow: 0 1px 0 rgba(255,255,255,0.55) inset;
+    }
+    .switchRow .left{ display: grid; gap: 2px; }
+    .switchRow .left .lbl{ font-size: 13px; font-weight: 780; }
+    .switchRow .left .hint{ font-size: 12px; color: var(--muted); }
+
+    .pdfRow{
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 16px;
+      border: 1px solid rgba(0,0,0,0.10);
+      background: rgba(255,255,255,0.56);
+      box-shadow: 0 1px 0 rgba(255,255,255,0.55) inset;
+    }
+    .pdfRow .left{ display: grid; gap: 2px; }
+    .pdfRow .left .lbl{ font-size: 13px; font-weight: 780; }
+    .pdfRow .left .hint{ font-size: 12px; color: var(--muted); }
+    .pdfRow .pdfActions{ display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+
+
+    .toggle{
+      width: 52px;
+      height: 30px;
+      border-radius: 999px;
+      background: rgba(120,120,128,0.24);
+      border: 1px solid rgba(0,0,0,0.10);
+      position: relative;
+      cursor: pointer;
+      user-select: none;
+      flex: none;
+      transition: background var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease);
+    }
+    .toggle::after{
+      content:"";
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 26px;
+      height: 26px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.94);
+      box-shadow: 0 10px 22px rgba(0,0,0,0.14);
+      transition: transform var(--dur-1) var(--ease-out);
+    }
+    .toggle.on{
+      background: rgba(52,199,89,0.32);
+      border-color: rgba(52,199,89,0.26);
+    }
+    .toggle.on::after{ transform: translateX(22px); }
+
+    .modalFooter{
+      padding: 12px 16px 14px;
+      border-top: 1px solid rgba(0,0,0,0.10);
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      justify-content: flex-end;
+      background: rgba(255,255,255,0.40);
+    }
+
+    .dangerArea{ padding: 0 16px 16px; display: none; gap: 10px; }
+    .dangerArea.show{ display: grid; }
+
+    .help{ font-size: 12px; color: var(--muted); line-height: 1.45; }
+
+    .toast{
+      position: fixed;
+      left: 50%;
+      bottom: 18px;
+      transform: translateX(-50%);
+      max-width: min(560px, calc(100% - 24px));
+      padding: 10px 12px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.18);
+      background: rgba(20,20,24,0.72);
+      color: rgba(255,255,255,0.92);
+      box-shadow: var(--shadow-sm);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      font-size: 13px;
+      z-index: 120;
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition: opacity var(--dur-2) var(--ease-out), transform var(--dur-2) var(--ease-out), visibility var(--dur-2) var(--ease-out);
+    }
+    .toast.show{
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    @media (max-width: 520px){
+      :root{ --colw: 156px; --timew: 70px; }
+      .topbarRight{ gap: 8px; }
+      .btn{ padding: 10px 10px; }
+    }
+  
+    /* =========================
+       Google Sites iframe (mobile) fixes
+       ========================= */
+    .btn{ white-space: nowrap; }
+    .topbarRight{
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      max-width: 100%;
+      -webkit-overflow-scrolling: touch;
+      padding-bottom: 2px;
+    }
+    .topbarRight::-webkit-scrollbar{ display:none; }
+
+    /* iOS / embedded viewport 안정化 */
+    body{ min-height: 100dvh; }
+    .app{ min-height: 100dvh; }
+
+    @media (max-width: 520px){
+      .app{ padding: 10px; }
+      .topbar{
+        grid-template-columns: 1fr;
+        height: auto;
+        align-items: stretch;
+      }
+      .topbarRight{
+        justify-content: flex-start;
+        gap: 8px;
+      }
+      .field{ flex: 1 1 220px; }
+    }
+
+    @media (max-width: 420px){
+      .field label{ display:none; }
+      .btn{ padding: 10px 10px; font-size: 12px; }
+      :root{ --colw: 146px; --timew: 66px; }
+    }
+
+  
+    /* =========================
+       Mobile compact (show more timeline)
+       ========================= */
+    @media (max-width: 520px){
+      :root{
+        --radius: 18px;
+        --headh: 46px;
+      }
+      .app{ padding: 8px; }
+      .topbar{ padding: 8px 10px; }
+      .headerCell{ padding: 8px 8px 6px; }
+      .headerName{ font-size: 12px; }
+      .headerMeta{ font-size: 10px; }
+    }
+
+    /* =========================
+       Hour stamps inside each room column
+       (time visible even while horizontal scrolling)
+       ========================= */
+    .hourStamp{
+      position: absolute;
+      left: 10px;
+      height: 18px;
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 760;
+      letter-spacing: .2px;
+      color: rgba(10,10,12,0.58);
+      background: rgba(255,255,255,0.40);
+      border: 1px solid rgba(0,0,0,0.08);
+      box-shadow: 0 1px 0 rgba(255,255,255,0.45) inset;
+      transform: translateY(-9px);
+      pointer-events: none;
+      z-index: 2;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    /* iOS sticky stability: avoid backdrop-filter on sticky gutters */
+    .timeCol, .corner{
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+    }
+
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <div class="window">
+      <div class="topbar" role="banner">
+        <div class="topbarCenter">
+          <div class="title">授業スケジュール</div>
+        </div>
+
+        <div class="topbarRight">
+          <div class="field" id="modeField">
+            <label>表示</label>
+            <div class="seg" role="tablist" aria-label="表示モード">
+              <button id="modeScheduleBtn" class="segBtn" type="button" role="tab" aria-selected="true">スケジュール</button>
+              <button id="modeRequestBtn" class="segBtn" type="button" role="tab" aria-selected="false">希望</button>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="datePicker">週</label>
+            <input id="datePicker" type="date" />
+          </div>
+
+          <button id="prevWeekBtn" class="btn" type="button">＜</button>
+          <button id="nextWeekBtn" class="btn" type="button">＞</button>
+          <button id="reloadBtn" class="btn" type="button">再読み込み</button>
+          <button id="newBtn" class="btn primary" type="button">＋ 授業</button>
+        </div>
+      </div>
+
+      <div id="scroll" class="scroll">
+        <div id="canvas" class="canvas">
+          <div class="headerRow">
+            <div class="corner">時間</div>
+            <div id="headers" class="headers"></div>
+          </div>
+
+          <div class="mainRow">
+            <div id="timeCol" class="timeCol"></div>
+            <div id="colsWrap" class="colsWrap"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="modalOverlay" class="modalOverlay" role="dialog" aria-modal="true" aria-label="授業の編集">
+    <div class="modal">
+      <div class="modalHeader">
+        <div id="modalTitle" class="modalTitle">授業</div>
+        <button id="modalClose" class="btn" type="button">閉じる</button>
+      </div>
+
+      <div class="modalBody">
+        <div id="mError" class="mError" role="alert" aria-live="polite">
+          <div class="icon">!</div>
+          <div class="msg" id="mErrorMsg"></div>
+        </div>
+
+        <div class="row">
+          <div class="control" style="display:none;">
+            <label>先生</label>
+            <select id="mResource"></select>
+          </div>
+          <div class="control">
+            <label>日付</label>
+            <input id="mDate" type="text" placeholder="YYYY-MM-DD" />
+          </div>
+        </div>
+
+        <div class="row">
+          <div id="mStartWrap" class="control">
+            <label>開始</label>
+            <select id="mStart"></select>
+          </div>
+          <div id="mEndWrap" class="control">
+            <label>終了</label>
+            <select id="mEnd"></select>
+          </div>
+        </div>
+
+        <div class="control">
+          <label>授業内容（表示：太字）</label>
+          <input id="mTitle" type="text" placeholder="例：面談 / MTG / 作業" />
+        </div>
+
+        <div class="control">
+          <label>生徒名（削除に必要）</label>
+          <input id="mUser" type="text" placeholder="例：山田 太郎" />
+        </div>
+
+        <div class="switchRow">
+          <div class="left">
+            <div class="lbl">体験</div>
+            <div class="hint">体験を表示（オレンジ系）</div>
+          </div>
+          <div id="mVisitorToggle" class="toggle" tabindex="0" role="switch" aria-checked="false"></div>
+        </div>
+
+        <div class="pdfRow" id="pdfRow">
+          <div class="left">
+            <div class="lbl">教材PDF</div>
+            <div class="hint" id="pdfHint">未登録</div>
+          </div>
+          <div class="pdfActions">
+            <button id="pdfOpenBtn" class="btn" type="button" style="display:none;">開く</button>
+            <button id="pdfCopyBtn" class="btn" type="button" style="display:none;">リンクコピー</button>
+            <button id="pdfUploadBtn" class="btn primary" type="button">アップロード</button>
+            <input id="pdfFile" type="file" accept="application/pdf" style="display:none;" />
+          </div>
+        </div>
+
+        <div class="help" id="mHint">
+          スマホ：列の空き領域を <b>長押し</b> → 指を上下に動かして範囲を調整 → 指を離すと編集画面が開きます。<br>
+          PC：クリック→ドラッグで範囲指定。<br>
+          （キーボード：Escで閉じる / Enterで保存）
+        </div>
+      </div>
+
+      <div class="modalFooter">
+        <button id="deleteBtn" class="btn danger" type="button" style="display:none;">削除</button>
+        <button id="saveBtn" class="btn primary" type="button">保存</button>
+      </div>
+
+      <div id="dangerArea" class="dangerArea">
+        <div class="control">
+          <label>削除確認：生徒名を入力（完全一致）</label>
+          <input id="deleteName" type="text" placeholder="生徒名（trim後に完全一致）" />
+        </div>
+        <div class="help">削除は「生徒名（trim）」が一致する場合のみ許可されます。（Enterで削除確定）</div>
+        <div style="display:flex; gap:10px; justify-content:flex-end;">
+          <button id="confirmDeleteBtn" class="btn danger" type="button">削除を確定</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <div id="reqOverlay" class="modalOverlay" role="dialog" aria-modal="true" aria-label="希望の提出">
+    <div class="modal">
+      <div class="modalHeader">
+        <div id="reqTitle" class="modalTitle">希望</div>
+        <button id="reqClose" class="btn" type="button">閉じる</button>
+      </div>
+
+      <div class="modalBody">
+        <div id="reqError" class="mError" role="alert" aria-live="polite">
+          <div class="icon">!</div>
+          <div class="msg" id="reqErrorMsg"></div>
+        </div>
+
+        <div class="row">
+          <div class="control">
+            <label>日付</label>
+            <input id="rDate" type="text" placeholder="YYYY-MM-DD" />
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="control">
+            <label>開始</label>
+            <select id="rStart"></select>
+          </div>
+          <div class="control">
+            <label>終了</label>
+            <select id="rEnd"></select>
+          </div>
+        </div>
+
+        <div class="control">
+          <label>希望内容（任意）</label>
+          <input id="rTitle" type="text" placeholder="例：英語 / 数学 / 面談" />
+        </div>
+
+        <div class="control">
+          <label>生徒名（必須）</label>
+          <input id="rName" type="text" placeholder="例：山田 太郎" />
+        </div>
+
+        <div class="control">
+          <label>メール（任意）</label>
+          <input id="rEmail" type="text" placeholder="例：taro@example.com" />
+        </div>
+
+        <div class="control">
+          <label>メモ（任意）</label>
+          <input id="rNote" type="text" placeholder="例：学校の宿題を見てほしい / 体験" />
+        </div>
+
+        <div class="help">
+          「希望」モードでは、空き時間をドラッグして希望枠を作れます。<br>
+          先生（管理者）は希望をタップして「確定（授業化）」または「却下」ができます。
+        </div>
+      </div>
+
+      <div class="modalFooter" style="gap:10px;">
+        <button id="reqDeleteBtn" class="btn danger" type="button" style="display:none;">削除</button>
+        <div style="flex:1;"></div>
+        <button id="reqRejectBtn" class="btn danger" type="button" style="display:none;">却下</button>
+        <button id="reqApproveBtn" class="btn primary" type="button" style="display:none;">確定（授業化）</button>
+        <button id="reqSaveBtn" class="btn primary" type="button">提出</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    
+(() => {
+  const state = {
+    config: null,
+    resources: [],
+    bookings: [],
+    requests: [],
+    anchorDate: "",
+    weekStart: "",
+    days: [],
+    teacherId: "",
+    teacherName: "",
+    dragging: null,
+    editingId: null,
+    editingReqId: null,
+    slotPxBase: 44,
+    adminKey: "",
+    isAdmin: false,
+    clientId: "",
+    mode: "schedule", // schedule | request
+    lastPointerY: null,
+    dragAutoScrollDir: 0,
+    dragAutoScrollRaf: 0,
+    lastFocus: null,
+  };
+
+
+  const FIXED_STUDENT_NAME = "だいちゃん";
+
+  function enforceFixedStudentUI_(){
+    // 生徒は1人固定
+    if (el && el.rName) {
+      el.rName.value = FIXED_STUDENT_NAME;
+      el.rName.readOnly = true;
+      el.rName.disabled = true;
+      const w = (typeof el.rName.closest === 'function') ? el.rName.closest('.control') : null;
+      if (w) w.style.display = 'none';
+    }
+    if (el && el.mUser) {
+      el.mUser.value = FIXED_STUDENT_NAME;
+      el.mUser.readOnly = true;
+      el.mUser.disabled = true;
+      const w2 = (typeof el.mUser.closest === 'function') ? el.mUser.closest('.control') : null;
+      if (w2) w2.style.display = 'none';
+    }
+  }
+
+  const el = {
+    scroll: document.getElementById("scroll"),
+    canvas: document.getElementById("canvas"),
+    headers: document.getElementById("headers"),
+    timeCol: document.getElementById("timeCol"),
+    colsWrap: document.getElementById("colsWrap"),
+
+    modeScheduleBtn: document.getElementById("modeScheduleBtn"),
+    modeRequestBtn: document.getElementById("modeRequestBtn"),
+    datePicker: document.getElementById("datePicker"),
+    prevWeekBtn: document.getElementById("prevWeekBtn"),
+    nextWeekBtn: document.getElementById("nextWeekBtn"),
+    reloadBtn: document.getElementById("reloadBtn"),
+    newBtn: document.getElementById("newBtn"),
+
+    modalOverlay: document.getElementById("modalOverlay"),
+    modalTitle: document.getElementById("modalTitle"),
+    modalClose: document.getElementById("modalClose"),
+    saveBtn: document.getElementById("saveBtn"),
+    deleteBtn: document.getElementById("deleteBtn"),
+    dangerArea: document.getElementById("dangerArea"),
+    confirmDeleteBtn: document.getElementById("confirmDeleteBtn"),
+
+    mError: document.getElementById("mError"),
+    mErrorMsg: document.getElementById("mErrorMsg"),
+
+    mResource: document.getElementById("mResource"),
+    mDate: document.getElementById("mDate"),
+    mStartWrap: document.getElementById("mStartWrap"),
+    mEndWrap: document.getElementById("mEndWrap"),
+    mStart: document.getElementById("mStart"),
+    mEnd: document.getElementById("mEnd"),
+    mTitle: document.getElementById("mTitle"),
+    mUser: document.getElementById("mUser"),
+    mVisitorToggle: document.getElementById("mVisitorToggle"),
+    deleteName: document.getElementById("deleteName"),
+
+    pdfHint: document.getElementById("pdfHint"),
+    pdfOpenBtn: document.getElementById("pdfOpenBtn"),
+    pdfCopyBtn: document.getElementById("pdfCopyBtn"),
+    pdfUploadBtn: document.getElementById("pdfUploadBtn"),
+    pdfFile: document.getElementById("pdfFile"),
+
+    reqOverlay: document.getElementById("reqOverlay"),
+    reqTitle: document.getElementById("reqTitle"),
+    reqClose: document.getElementById("reqClose"),
+    reqError: document.getElementById("reqError"),
+    reqErrorMsg: document.getElementById("reqErrorMsg"),
+
+    rDate: document.getElementById("rDate"),
+    rStart: document.getElementById("rStart"),
+    rEnd: document.getElementById("rEnd"),
+    rTitle: document.getElementById("rTitle"),
+    rName: document.getElementById("rName"),
+    rEmail: document.getElementById("rEmail"),
+    rNote: document.getElementById("rNote"),
+    reqSaveBtn: document.getElementById("reqSaveBtn"),
+    reqDeleteBtn: document.getElementById("reqDeleteBtn"),
+    reqApproveBtn: document.getElementById("reqApproveBtn"),
+    reqRejectBtn: document.getElementById("reqRejectBtn"),
+
+    toast: document.getElementById("toast"),
+  };
+
+
+  function initAuthAndClient_(){
+    const params = new URLSearchParams(location.search);
+    state.adminKey = params.get("key") || "";
+    const stored = localStorage.getItem("lessonClientId") || "";
+    let cid = params.get("cid") || stored;
+    if (!cid) {
+      cid = "c_" + Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(2, 6);
+      localStorage.setItem("lessonClientId", cid);
+    } else {
+      localStorage.setItem("lessonClientId", cid);
+    }
+    state.clientId = cid;
+
+    state._initialModeParam = params.get("mode") || "";
+  }
+
+  function setMode_(mode){
+    state.mode = (mode === "request") ? "request" : "schedule";
+    const isReq = state.mode === "request";
+    el.modeRequestBtn.classList.toggle("active", isReq);
+    el.modeScheduleBtn.classList.toggle("active", !isReq);
+    el.modeRequestBtn.setAttribute("aria-selected", isReq ? "true" : "false");
+    el.modeScheduleBtn.setAttribute("aria-selected", !isReq ? "true" : "false");
+  }
+
+  // -----------------
+  // Utilities
+  // -----------------
+  const pad2 = (n) => String(n).padStart(2, "0");
+
+  function toDateStrLocal_(d){
+    const y = d.getFullYear();
+    const m = pad2(d.getMonth() + 1);
+    const day = pad2(d.getDate());
+    return `${y}-${m}-${day}`;
+  }
+
+  function parseYmd_(ymd){
+    const [y,m,d] = (ymd||"").split("-").map(Number);
+    if (!y || !m || !d) return null;
+    return new Date(y, m-1, d);
+  }
+
+  function addDaysYmd_(ymd, delta){
+    const dt = parseYmd_(ymd);
+    if (!dt) return ymd;
+    dt.setDate(dt.getDate() + Number(delta || 0));
+    return toDateStrLocal_(dt);
+  }
+
+  function timeToMin(t){
+    const [hh, mm] = String(t||"").split(":");
+    return (Number(hh||0) * 60) + Number(mm||0);
+  }
+
+  function minToTime(m){
+    const hh = Math.floor(m/60);
+    const mm = m % 60;
+    return `${pad2(hh)}:${pad2(mm)}`;
+  }
+
+  function clamp(n, a, b){
+    return Math.max(a, Math.min(b, n));
+  }
+
+  function getNowMin_(){
+    const d = new Date();
+    return d.getHours()*60 + d.getMinutes();
+  }
+
+  async function runGAS(fn, ...args){
+    return new Promise((resolve, reject) => {
+      google.script.run
+        .withSuccessHandler(resolve)
+        .withFailureHandler(reject)[fn](...args);
+    });
+  }
+
+  let toastTimer = null;
+  function toast(msg){
+    el.toast.textContent = msg;
+    el.toast.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.toast.classList.remove("show"), 2600);
+  }
+
+  function rememberFocus_(){
+    state.lastFocus = document.activeElement;
+  }
+
+  function restoreFocus_(){
+    const last = state.lastFocus;
+    state.lastFocus = null;
+    if (last && typeof last.focus === "function") {
+      try { last.focus(); } catch (_) {}
+    }
+  }
+
+  function showModalError_(msg){
+    el.mErrorMsg.textContent = String(msg || "");
+    el.mError.classList.toggle("show", !!msg);
+  }
+
+  function clearModalError_(){ showModalError_(""); }
+
+  function setModalInvalid_(invalid, highlightTime){
+    const highlight = (typeof highlightTime === "boolean") ? highlightTime : invalid;
+    el.mStartWrap.classList.toggle("invalid", !!highlight);
+    el.mEndWrap.classList.toggle("invalid", !!highlight);
+    el.saveBtn.disabled = !!invalid;
+  }
+
+  function checkOverlap_(candidate, excludeId){
+    const ns = timeToMin(candidate.startTime);
+    const ne = timeToMin(candidate.endTime);
+    for (const b of state.bookings) {
+      if (excludeId && b.id === excludeId) continue;
+      if (b.date !== candidate.date) continue;
+      if (b.resourceId !== candidate.resourceId) continue;
+      const es = timeToMin(b.startTime);
+      const ee = timeToMin(b.endTime);
+      if (ns < ee && ne > es) return true;
+    }
+    return false;
+  }
+
+  function isPastSlot_(candidate){
+    const today = toDateStrLocal_(new Date());
+    if (candidate.date !== today) return false;
+    const slot = Number(state.config.slotMinutes || 15);
+    const startMin = timeToMin(candidate.startTime);
+    const minAllowed = Math.ceil(getNowMin_() / slot) * slot;
+    return startMin < minAllowed;
+  }
+
+  function validateModalLive_(){
+    try {
+      clearModalError_();
+      setModalInvalid_(false);
+
+      const resourceId = el.mResource.value.trim();
+      const date = el.mDate.value.trim();
+      const startTime = el.mStart.value;
+      const endTime = el.mEnd.value;
+      const title = el.mTitle.value.trim();
+      const userName = el.mUser.value.trim();
+      const isVisitor = el.mVisitorToggle.classList.contains("on");
+
+      if (!resourceId || !date || !startTime || !endTime) {
+        setModalInvalid_(true);
+        return;
+      }
+
+      const s = timeToMin(startTime);
+      const e = timeToMin(endTime);
+      if (e <= s) {
+        setModalInvalid_(true);
+        showModalError_("終了は開始より後にしてください");
+        return;
+      }
+
+      if (!title) {
+        setModalInvalid_(true, false);
+        showModalError_("授業内容を入力してください");
+        return;
+      }
+
+      if (!userName) {
+        setModalInvalid_(true, false);
+        showModalError_("生徒名を入力してください");
+        return;
+      }
+
+      const candidate = { resourceId, date, startTime, endTime, title, userName, isVisitor };
+      if (isPastSlot_(candidate)) {
+        setModalInvalid_(true);
+        showModalError_("開始時刻が過去です（本日分のみ）");
+        return;
+      }
+
+      if (checkOverlap_(candidate, state.editingId)) {
+        setModalInvalid_(true);
+        showModalError_("同じ先生で時間が重なっています");
+        return;
+      }
+
+      setModalInvalid_(false);
+
+    } catch (err) {
+      showModalError_(String(err && err.message ? err.message : err));
+      setModalInvalid_(true);
+    }
+  }
+
+  function ensureStartEndValid_(){
+    const s = timeToMin(el.mStart.value);
+    const e = timeToMin(el.mEnd.value);
+    const slot = Number(state.config.slotMinutes || 15);
+
+    if (e <= s) {
+      const next = clamp(s + slot, timeToMin(state.config.start), timeToMin(state.config.end));
+      el.mEnd.value = minToTime(next);
+    }
+  }
+
+  function buildTimeOptions_(){
+    const slot = Number(state.config.slotMinutes || 15);
+    const openMin = timeToMin(state.config.start);
+    const closeMin = timeToMin(state.config.end);
+
+    const opts = [];
+    for (let m = openMin; m <= closeMin; m += slot) {
+      opts.push(minToTime(m));
+    }
+
+    const mk = (selectEl) => {
+      selectEl.innerHTML = "";
+      for (const t of opts) {
+        const o = document.createElement("option");
+        o.value = t;
+        o.textContent = t;
+        selectEl.appendChild(o);
+      }
+    };
+
+    mk(el.mStart);
+    mk(el.mEnd);
+    if (el.rStart && el.rEnd) { mk(el.rStart); mk(el.rEnd); }
+  }
+
+  function applyConfigToCSS_(){
+    const slotMin = Number(state.config.slotMinutes || 15);
+    const slotPx = state.slotPxBase;
+    const pxPerMin = slotPx / slotMin;
+
+    const openMin = timeToMin(state.config.start);
+    const closeMin = timeToMin(state.config.end);
+    const totalMin = Math.max(0, closeMin - openMin);
+    const gridH = Math.max(600, Math.ceil(totalMin * pxPerMin));
+
+    document.documentElement.style.setProperty("--slotMin", String(slotMin));
+    document.documentElement.style.setProperty("--pxPerMin", String(pxPerMin));
+    document.documentElement.style.setProperty("--slotPx", `${slotMin * pxPerMin}px`);
+    document.documentElement.style.setProperty("--hourPx", `${60 * pxPerMin}px`);
+    document.documentElement.style.setProperty("--gridH", `${gridH}px`);
+  }
+
+  function computeSlotPxBase_(){
+    // 目安：mobile=38〜40 / desktop=44 / large=48
+    const w = window.innerWidth || 800;
+    const h = window.innerHeight || 800;
+    if (w < 520) return 38;
+    if (w >= 1200 && h >= 820) return 48;
+    return 44;
+  }
+
+  function computeColWidth_(){
+    // 7列が「画面幅いっぱい」に近づくように列幅を動的に調整
+    // - 画面が広いと右側の余白が目立つ問題を解消
+    // - 画面が狭い場合は最小幅を維持して横スクロール
+    const root = document.documentElement;
+    const cs = getComputedStyle(root);
+    const timew = Number(String(cs.getPropertyValue("--timew") || "78").replace("px","")) || 78;
+    const avail = (el.scroll && el.scroll.clientWidth) ? el.scroll.clientWidth : (window.innerWidth || 1000);
+
+    const isMobile = (window.innerWidth || 800) < 520;
+    const minCol = isMobile ? 118 : 150;
+    // 画面が広い場合でもなるべく「余白が出ない」ように上限を少し緩める
+    const maxCol = isMobile ? 168 : 340;
+
+    const ideal = Math.floor((avail - timew) / 7);
+    const colw = clamp(ideal, minCol, maxCol);
+    root.style.setProperty("--colw", `${colw}px`);
+  }
+
+  function normalizeDays_(days){
+    // days が「オブジェクト」でも「YYYY-MM-DD文字列」でも動くように正規化
+    // - 曜日が空/スペースのときは必ず date から再計算する
+    const dowJa = ['日','月','火','水','木','金','土'];
+    const today = toDateStrLocal_(new Date());
+
+    return (days || []).map(d0 => {
+      const d = (typeof d0 === "string") ? ({ date: d0 }) : (d0 || {});
+      const ymd = String(d.date || d.ymd || "").trim();
+
+      const dt = parseYmd_(ymd);
+      const srvDow = String((d.dowLabel ?? d.dow ?? "")).trim();
+      const srvMd  = String((d.mdLabel ?? d.md ?? "")).trim();
+
+      const dow = srvDow || (dt ? dowJa[dt.getDay()] : "");
+      const md = (dt ? `${dt.getMonth()+1}/${dt.getDate()}` : (srvMd || ymd));
+
+      const isToday = (typeof d.isToday === "boolean")
+        ? d.isToday
+        : (String(d.isToday || "").toLowerCase() === "true" ? true : (ymd === today));
+
+      return {
+        ...d,
+        date: ymd,
+        mdLabel: md,
+        dowLabel: dow,
+        isToday,
+      };
+    });
+  }
+
+  function renderStructure_(){
+    // headers (7日)
+    el.headers.innerHTML = "";
+    for (const d of state.days) {
+      const cell = document.createElement("div");
+      cell.className = "headerCell";
+      cell.dataset.date = d.date;
+
+      const name = document.createElement("div");
+      name.className = "headerName";
+      const md = String(d.mdLabel || d.md || d.date || "").trim();
+      const dow = String(d.dowLabel || d.dow || "").trim();
+
+      if (d.isToday) cell.classList.add("today");
+      name.textContent = dow ? `${md}（${dow}）` : md;
+
+      const meta = document.createElement("div");
+      meta.className = "headerMeta";
+      meta.textContent = String(d.date || "");
+
+      cell.appendChild(name);
+      cell.appendChild(meta);
+      el.headers.appendChild(cell);
+    }
+
+    // time labels
+    el.timeCol.innerHTML = "";
+    el.timeCol.style.position = "relative";
+    const openMin = timeToMin(state.config.start);
+    const closeMin = timeToMin(state.config.end);
+    const pxPerMin = Number(getComputedStyle(document.documentElement).getPropertyValue("--pxPerMin")) || 3;
+
+    const startHour = Math.floor(openMin / 60);
+    const endHour = Math.ceil(closeMin / 60);
+
+    for (let h = startHour; h <= endHour; h++) {
+      const m = h * 60;
+      if (m < openMin || m > closeMin) continue;
+      const top = (m - openMin) * pxPerMin;
+      const d = document.createElement("div");
+      d.className = "timeLabel";
+      d.style.top = `${top}px`;
+      d.textContent = `${pad2(h)}:00`;
+      el.timeCol.appendChild(d);
+    }
+
+    // columns
+    el.colsWrap.innerHTML = "";
+    const gridH = getComputedStyle(document.documentElement).getPropertyValue("--gridH");
+
+    for (const d of state.days) {
+      const col = document.createElement("div");
+      col.className = "col";
+      col.dataset.date = d.date;
+      col.style.height = gridH;
+      col.addEventListener("pointerdown", onColPointerDown_);
+      renderHourStampsInCol_(col);
+      el.colsWrap.appendChild(col);
+    }
+  }
+
+  function renderHourStampsInCol_(col){
+    const openMin = timeToMin(state.config.start);
+    const closeMin = timeToMin(state.config.end);
+    const pxPerMin = Number(getComputedStyle(document.documentElement).getPropertyValue("--pxPerMin")) || 3;
+
+    const startHour = Math.floor(openMin / 60);
+    const endHour = Math.ceil(closeMin / 60);
+
+    for (let h = startHour; h <= endHour; h++) {
+      const m = h * 60;
+      if (m < openMin || m > closeMin) continue;
+      const top = (m - openMin) * pxPerMin;
+      const line = document.createElement("div");
+      line.className = "hourStamp";
+      line.style.top = `${top}px`;
+      col.appendChild(line);
+    }
+  }
+
+  function clearBookings_(){
+    el.colsWrap.querySelectorAll(".booking, .request, .nowLine, .nowDot").forEach(n => n.remove());
+  }
+
+  function renderBookings_(){
+    const openMin = timeToMin(state.config.start);
+    const pxPerMin = Number(getComputedStyle(document.documentElement).getPropertyValue("--pxPerMin")) || 3;
+
+    const colMap = new Map();
+    for (const col of el.colsWrap.querySelectorAll(".col")) {
+      colMap.set(col.dataset.date, col);
+    }
+
+    for (const b of state.bookings) {
+      const col = colMap.get(b.date);
+      if (!col) continue;
+
+      const sMin = timeToMin(b.startTime);
+      const eMin = timeToMin(b.endTime);
+      const top = (sMin - openMin) * pxPerMin;
+      const height = Math.max(8, (eMin - sMin) * pxPerMin);
+
+      const card = document.createElement("div");
+      card.className = "booking";
+      if (b.isVisitor) card.classList.add("visitor");
+      card.dataset.id = b.id;
+      card.style.top = `${top}px`;
+      card.style.height = `${height}px`;
+
+      const t = document.createElement("div");
+      t.className = "bTitle";
+      t.textContent = b.title || "(無題)";
+
+      const m = document.createElement("div");
+      m.className = "bMeta";
+      const metaParts = [];
+      metaParts.push(`${b.startTime}–${b.endTime}`);
+      metaParts.push(b.userName || "");
+      if (b.pdfFileId) metaParts.push("PDF");
+      m.textContent = metaParts.filter(Boolean).join(" • ");
+
+      card.appendChild(t);
+      card.appendChild(m);
+
+      card.addEventListener("pointerdown", (ev) => {
+        ev.stopPropagation();
+        if (state.mode !== "request" && !state.isAdmin) return;
+
+    ev.preventDefault();
+        openModal_("edit", b, !state.isAdmin);
+      });
+
+      col.appendChild(card);
+    }
+  }
+
+
+  function renderRequests_(){
+    const openMin = timeToMin(state.config.start);
+    const pxPerMin = Number(getComputedStyle(document.documentElement).getPropertyValue("--pxPerMin")) || 3;
+
+    const colMap = new Map();
+    for (const col of el.colsWrap.querySelectorAll(".col")) {
+      colMap.set(col.dataset.date, col);
+    }
+
+    for (const r of (state.requests || [])) {
+      const col = colMap.get(r.date);
+      if (!col) continue;
+
+      const sMin = timeToMin(r.startTime);
+      const eMin = timeToMin(r.endTime);
+      const top = (sMin - openMin) * pxPerMin;
+      const height = Math.max(8, (eMin - sMin) * pxPerMin);
+
+      const card = document.createElement("div");
+      card.className = "request";
+      card.dataset.id = r.id;
+      card.style.top = `${top}px`;
+      card.style.height = `${height}px`;
+
+      const t = document.createElement("div");
+      t.className = "rTitle";
+      t.textContent = (r.title && String(r.title).trim()) ? String(r.title).trim() : "希望";
+
+      const m = document.createElement("div");
+      m.className = "rMeta";
+      const metaParts = [];
+      metaParts.push(`${r.startTime}–${r.endTime}`);
+      if (r.studentName) metaParts.push(r.studentName);
+      m.textContent = metaParts.filter(Boolean).join(" • ");
+
+      card.appendChild(t);
+      card.appendChild(m);
+
+      card.addEventListener("pointerdown", (ev) => {
+        ev.stopPropagation();
+        ev.preventDefault();
+        openRequestModal_("edit", r);
+      });
+
+      col.appendChild(card);
+    }
+  }
+
+  function renderNowLine_(){
+    const today = toDateStrLocal_(new Date());
+    const col = el.colsWrap.querySelector(`.col[data-date="${today}"]`);
+    if (!col) return;
+
+    const openMin = timeToMin(state.config.start);
+    const closeMin = timeToMin(state.config.end);
+    const nowMin = getNowMin_();
+    if (nowMin < openMin || nowMin > closeMin) return;
+
+    const pxPerMin = Number(getComputedStyle(document.documentElement).getPropertyValue("--pxPerMin")) || 3;
+    const top = (nowMin - openMin) * pxPerMin;
+
+    const line = document.createElement("div");
+    line.className = "nowLine";
+    line.style.top = `${top}px`;
+
+    const dot = document.createElement("div");
+    dot.className = "nowDot";
+    dot.style.top = `${top - 4}px`;
+
+    col.appendChild(line);
+    col.appendChild(dot);
+  }
+
+  function scrollToNow_(){
+    const today = toDateStrLocal_(new Date());
+    const col = el.colsWrap.querySelector(`.col[data-date="${today}"]`);
+    if (!col) return;
+
+    const openMin = timeToMin(state.config.start);
+    const nowMin = getNowMin_();
+    const pxPerMin = Number(getComputedStyle(document.documentElement).getPropertyValue("--pxPerMin")) || 3;
+
+    const top = (nowMin - openMin) * pxPerMin;
+    el.scroll.scrollTop = clamp(top - 180, 0, el.scroll.scrollHeight);
+  }
+
+  // -----------------
+  // Week loading
+  // -----------------
+
+  async function loadInit_(){
+    try {
+      const res = await runGAS("getInit", state.adminKey);
+      if (!res || !res.ok) throw new Error(res && res.message ? res.message : "初期化に失敗しました");
+
+      state.config = res.data.config;
+      state.slotPxBase = computeSlotPxBase_();
+      state.resources = res.data.resources || [];
+      state.teacherId = res.data.teacherId || (state.resources[0] && state.resources[0].resourceId) || "";
+
+      state.anchorDate = res.data.today || toDateStrLocal_(new Date());
+      state.weekStart = res.data.weekStart || "";
+      state.days = normalizeDays_(res.data.days || []);
+      state.bookings = res.data.bookings || [];
+      state.requests = res.data.requests || [];
+      state.isAdmin = !!res.data.isAdmin;
+
+      const t = state.resources.find(r => r.resourceId === state.teacherId);
+      state.teacherName = t ? (t.resourceName || "") : "";
+
+      el.newBtn.style.display = state.isAdmin ? "" : "none";
+
+      enforceFixedStudentUI_();
+
+      const initMode = (state._initialModeParam === "request" || !state.isAdmin) ? "request" : "schedule";
+      setMode_(initMode);
+
+      enforceFixedStudentUI_();
+
+      computeColWidth_();
+      applyConfigToCSS_();
+      renderStructure_();
+
+      el.datePicker.value = state.anchorDate;
+
+      clearBookings_();
+      renderBookings_();
+      renderRequests_();
+      renderNowLine_();
+      scrollToNow_();
+    } catch (err) {
+      toast(String(err && err.message ? err.message : err));
+    }
+  }
+
+  async function loadWeek_(anchorDateStr, keepScroll){
+    try {
+      const beforeTop = el.scroll.scrollTop;
+      const beforeLeft = el.scroll.scrollLeft;
+
+      state.anchorDate = anchorDateStr;
+      el.datePicker.value = anchorDateStr;
+
+      const res = await runGAS("getWeek", anchorDateStr, state.clientId, state.adminKey);
+      if (!res || !res.ok) throw new Error(res && res.message ? res.message : "読み込みに失敗しました");
+
+      state.weekStart = res.data.weekStart;
+      state.days = normalizeDays_(res.data.days || []);
+      state.bookings = res.data.bookings || [];
+      state.requests = res.data.requests || [];
+      state.isAdmin = !!res.data.isAdmin;
+      el.newBtn.style.display = state.isAdmin ? "" : "none";
+
+      computeColWidth_();
+      renderStructure_();
+      clearBookings_();
+      renderBookings_();
+      renderRequests_();
+      renderNowLine_();
+
+      if (keepScroll) {
+        el.scroll.scrollTop = beforeTop;
+        el.scroll.scrollLeft = beforeLeft;
+      }
+    } catch (err) {
+      toast(String(err && err.message ? err.message : err));
+    }
+  }
+
+  // 画面サイズ変更時：列幅/スロット密度を追従（再描画）
+  let resizeTimer_ = null;
+  function onResize_(){
+    clearTimeout(resizeTimer_);
+    resizeTimer_ = setTimeout(() => {
+      if (!state.config) return;
+      state.slotPxBase = computeSlotPxBase_();
+      computeColWidth_();
+      applyConfigToCSS_();
+      renderStructure_();
+      clearBookings_();
+      renderBookings_();
+      renderRequests_();
+      renderNowLine_();
+    }, 120);
+  }
+
+  // -----------------
+  // Modal
+  // -----------------
+  function setToggle_(on){
+    el.mVisitorToggle.classList.toggle("on", !!on);
+    el.mVisitorToggle.setAttribute("aria-checked", !!on);
+  }
+
+  function findBookingById_(id){
+    return state.bookings.find(b => b.id === id) || null;
+  }
+
+  function updatePdfUI_(booking){
+    const has = !!(booking && booking.pdfFileId);
+    if (has) {
+      el.pdfHint.textContent = booking.pdfFileName || "PDF";
+      const url = booking.pdfUrl || "";
+      el.pdfOpenBtn.style.display = "";
+      el.pdfCopyBtn.style.display = "";
+      el.pdfOpenBtn.dataset.url = url;
+      el.pdfCopyBtn.dataset.url = url;
+    } else {
+      el.pdfHint.textContent = "未登録";
+      el.pdfOpenBtn.style.display = "none";
+      el.pdfCopyBtn.style.display = "none";
+      el.pdfOpenBtn.dataset.url = "";
+      el.pdfCopyBtn.dataset.url = "";
+    }
+
+    // 管理者のみアップロード可
+    el.pdfUploadBtn.style.display = state.isAdmin ? "" : "none";
+    // 新規授業は保存後にアップロード
+    el.pdfUploadBtn.disabled = !state.editingId;
+  }
+
+  function openModal_(mode, data, readonly){
+    rememberFocus_();
+    const ro = !!readonly;
+    state.editingId = (mode === "edit") ? data.id : null;
+
+    el.modalOverlay.classList.add("show");
+    el.dangerArea.classList.remove("show");
+    el.deleteName.value = "";
+
+    el.deleteBtn.style.display = (mode === "edit" && !ro) ? "" : "none";
+    el.saveBtn.style.display = (!ro) ? "" : "none";
+
+    el.modalTitle.textContent = (mode === "edit") ? "授業を編集" : "授業を追加";
+
+    // resources select
+    el.mResource.innerHTML = "";
+    for (const r of state.resources) {
+      const opt = document.createElement("option");
+      opt.value = r.resourceId;
+      opt.textContent = r.resourceName || r.resourceId;
+      el.mResource.appendChild(opt);
+    }
+
+    const slot = Number(state.config.slotMinutes || 15);
+    const defStart = state.config.start;
+    const defEnd = minToTime(timeToMin(defStart) + slot);
+
+    el.mResource.value = (data && data.resourceId) ? data.resourceId : (state.teacherId || "");
+    el.mDate.value = (data && data.date) ? data.date : (state.anchorDate || toDateStrLocal_(new Date()));
+
+    if (!el.mStart.options.length) buildTimeOptions_();
+    el.mStart.value = (data && data.startTime) ? data.startTime : defStart;
+    el.mEnd.value = (data && data.endTime) ? data.endTime : defEnd;
+    ensureStartEndValid_();
+
+    el.mTitle.value = (data && data.title) ? data.title : "";
+    el.mUser.value = (data && data.userName) ? data.userName : "";
+    setToggle_(!!(data && data.isVisitor));
+
+    enforceFixedStudentUI_();
+
+    // readonly
+    const dis = !!ro;
+    el.mResource.disabled = dis;
+    el.mDate.disabled = dis;
+    el.mStart.disabled = dis;
+    el.mEnd.disabled = dis;
+    el.mTitle.disabled = dis;
+    el.mUser.disabled = dis;
+    el.mVisitorToggle.style.pointerEvents = dis ? "none" : "";
+    el.mVisitorToggle.style.opacity = dis ? "0.65" : "";
+
+    clearModalError_();
+    if (!dis) validateModalLive_();
+    else setModalInvalid_(false);
+
+    updatePdfUI_(mode === "edit" ? data : null);
+
+    // focus
+    setTimeout(() => {
+      if (mode === "edit") el.mTitle.focus();
+      else el.mTitle.focus();
+    }, 0);
+  }
+
+  function closeModal_(){
+    el.modalOverlay.classList.remove("show");
+    state.editingId = null;
+    state.dragging = null;
+    restoreFocus_();
+  }
+
+  async function saveModal_(){
+    try {
+      validateModalLive_();
+      if (el.saveBtn.disabled) return;
+
+      const payload = {
+        resourceId: el.mResource.value.trim(),
+        date: el.mDate.value.trim(),
+        startTime: el.mStart.value,
+        endTime: el.mEnd.value,
+        userName: el.mUser.value.trim(),
+        title: el.mTitle.value.trim(),
+        isVisitor: el.mVisitorToggle.classList.contains("on"),
+      };
+
+      if (!payload.resourceId) throw new Error("先生を選択してください");
+
+      el.saveBtn.disabled = true;
+      el.saveBtn.textContent = "保存中…";
+
+      let res;
+      if (state.editingId) {
+        res = await runGAS("updateBooking", state.adminKey, state.editingId, payload);
+      } else {
+        res = await runGAS("addBooking", state.adminKey, payload);
+      }
+
+      if (!res || !res.ok) throw new Error(res && res.message ? res.message : "保存に失敗しました");
+
+      closeModal_();
+
+      // 先生が変わる可能性があるので、ビューを合わせる
+      state.teacherId = payload.resourceId;
+      await loadWeek_(payload.date, true);
+      toast("保存しました");
+
+    } catch (err) {
+      showModalError_(String(err && err.message ? err.message : err));
+    } finally {
+      el.saveBtn.disabled = false;
+      el.saveBtn.textContent = "保存";
+    }
+  }
+
+  async function confirmDelete_(){
+    try {
+      el.confirmDeleteBtn.disabled = true;
+      el.confirmDeleteBtn.textContent = "削除中…";
+
+      const res = await runGAS("deleteBooking", state.adminKey, state.editingId);
+      if (!res || !res.ok) throw new Error(res && res.message ? res.message : "削除に失敗しました");
+
+      closeModal_();
+      await loadWeek_(state.anchorDate || toDateStrLocal_(new Date()), true);
+      toast("削除しました");
+
+    } catch (err) {
+      toast(String(err && err.message ? err.message : err));
+    } finally {
+      el.confirmDeleteBtn.disabled = false;
+      el.confirmDeleteBtn.textContent = "削除を確定";
+    }
+  }
+
+  // -----------------
+  // PDF upload
+  // -----------------
+  async function uploadPdf_(file){
+    try {
+      if (!state.editingId) {
+        toast("先に保存してください");
+        return;
+      }
+      if (!file) return;
+
+      el.pdfUploadBtn.disabled = true;
+      el.pdfUploadBtn.textContent = "アップロード中…";
+
+      const base64 = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const s = String(reader.result || "");
+          const i = s.indexOf(",");
+          resolve(i >= 0 ? s.slice(i+1) : s);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      const res = await runGAS("uploadBookingPdf", state.adminKey, state.editingId, file.name, base64);
+      if (!res || !res.ok) throw new Error(res && res.message ? res.message : "アップロードに失敗しました");
+
+      // state反映
+      const idx = state.bookings.findIndex(b => b.id === state.editingId);
+      if (idx >= 0) {
+        state.bookings[idx] = { ...state.bookings[idx], ...res.data };
+      }
+
+      // modal反映（モーダルが開いたままなら）
+      const b = findBookingById_(state.editingId);
+      updatePdfUI_(b);
+
+      // 画面のバッジ更新
+      await loadWeek_(state.anchorDate || toDateStrLocal_(new Date()), true);
+
+      toast("PDFを登録しました");
+
+    } catch (err) {
+      toast(String(err && err.message ? err.message : err));
+    } finally {
+      el.pdfUploadBtn.disabled = !state.editingId;
+      el.pdfUploadBtn.textContent = "アップロード";
+    }
+  }
+
+  // -----------------
+  // Drag selection
+  // -----------------
+  function clientYToMin_(clientY){
+    const openMin = timeToMin(state.config.start);
+    const closeMin = timeToMin(state.config.end);
+    const pxPerMin = Number(getComputedStyle(document.documentElement).getPropertyValue("--pxPerMin")) || 3;
+
+    const rect = el.colsWrap.getBoundingClientRect();
+    const yRaw = clientY - rect.top;
+    const y = clamp(yRaw, 0, rect.height);
+    const min = openMin + (y / pxPerMin);
+    const slot = Number(state.config.slotMinutes || 15);
+    const snapped = Math.round(min / slot) * slot;
+    return clamp(snapped, openMin, closeMin);
+  }
+
+  function updateDragSelection_(clientY){
+    if (!state.dragging) return;
+    const m = clientYToMin_(clientY);
+    const slotMin = Number(state.config.slotMinutes || 15);
+
+    const a = (typeof state.dragging.anchorMin === "number") ? state.dragging.anchorMin : state.dragging.startMin;
+    const b = m;
+    const s = Math.min(a, b);
+    const eMin = Math.max(a, b) + slotMin;
+
+    state.dragging.startMin = clamp(s, timeToMin(state.config.start), timeToMin(state.config.end));
+    state.dragging.endMin = clamp(eMin, timeToMin(state.config.start), timeToMin(state.config.end));
+    updateSelectionUI_();
+  }
+
+  function setDragAutoScroll_(dir){
+    if (state.dragAutoScrollDir === dir) return;
+    state.dragAutoScrollDir = dir;
+
+    if (!dir) {
+      if (state.dragAutoScrollRaf) {
+        cancelAnimationFrame(state.dragAutoScrollRaf);
+        state.dragAutoScrollRaf = 0;
+      }
+      return;
+    }
+
+    if (state.dragAutoScrollRaf) return;
+
+    const step = 18;
+    const tick = () => {
+      if (!state.dragging || !state.dragAutoScrollDir) {
+        state.dragAutoScrollRaf = 0;
+        return;
+      }
+
+      const sc = el.scroll;
+      const max = Math.max(0, sc.scrollHeight - sc.clientHeight);
+      if (!max) {
+        state.dragAutoScrollDir = 0;
+        state.dragAutoScrollRaf = 0;
+        return;
+      }
+
+      const next = clamp(sc.scrollTop + (state.dragAutoScrollDir * step), 0, max);
+      if (next === sc.scrollTop) {
+        state.dragAutoScrollDir = 0;
+        state.dragAutoScrollRaf = 0;
+        return;
+      }
+      sc.scrollTop = next;
+      if (state.lastPointerY !== null) {
+        updateDragSelection_(state.lastPointerY);
+      }
+
+      state.dragAutoScrollRaf = requestAnimationFrame(tick);
+    };
+
+    state.dragAutoScrollRaf = requestAnimationFrame(tick);
+  }
+
+  function updateDragAutoScroll_(clientY){
+    if (!state.dragging) return;
+    const rect = el.scroll.getBoundingClientRect();
+    const edge = 36;
+    let dir = 0;
+    if (clientY < rect.top + edge) dir = -1;
+    else if (clientY > rect.bottom - edge) dir = 1;
+    setDragAutoScroll_(dir);
+  }
+
+
+  // -----------------
+  // Requests (生徒の希望)
+  // -----------------
+  function clearReqError_(){
+    el.reqError.classList.remove("show");
+    el.reqErrorMsg.textContent = "";
+  }
+  function showReqError_(msg){
+    el.reqError.classList.add("show");
+    el.reqErrorMsg.textContent = msg || "";
+  }
+
+  function ensureReqStartEndValid_(){
+    const s = timeToMin(el.rStart.value);
+    const e = timeToMin(el.rEnd.value);
+    const slot = Number(state.config.slotMinutes || 15);
+    if (e <= s) {
+      el.rEnd.value = minToTime(clamp(s + slot, timeToMin(state.config.start), timeToMin(state.config.end)));
+    }
+  }
+
+  function validateReqLive_(){
+    try {
+      clearReqError_();
+      const date = String(el.rDate.value || "").trim();
+      const startTime = el.rStart.value;
+      const endTime = el.rEnd.value;
+      const name = String(el.rName.value || "").trim();
+
+      if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error("日付が不正です");
+      if (!startTime || !endTime) throw new Error("時刻が不正です");
+      if (!name) throw new Error("生徒名を入力してください");
+
+      // 本日分のみ過去開始を軽く抑止（提出は可能だが注意）
+      const today = toDateStrLocal_(new Date());
+      if (date === today) {
+        const now = getNowMin_();
+        const sMin = timeToMin(startTime);
+        if (sMin < now) {
+          showReqError_("開始時刻が過去です（本日分のみ）");
+        }
+      }
+
+      // 既存授業との重なりは警告のみ（提出自体は可能）
+      const cand = { resourceId: state.teacherId, date, startTime, endTime };
+      if (checkOverlap_(cand, null)) {
+        showReqError_("この時間は既に授業が入っています（提出はできます）");
+      }
+
+      el.reqSaveBtn.disabled = false;
+    } catch (err) {
+      el.reqSaveBtn.disabled = true;
+      showReqError_(String(err && err.message ? err.message : err));
+    }
+  }
+
+  function openRequestModal_(mode, data){
+    // mode: new | edit
+    rememberFocus_();
+    state.editingReqId = (mode === "edit") ? String(data.id || "") : null;
+
+    // 権限：非管理者は自分の希望のみ編集可能
+    if (!state.isAdmin && mode === "edit") {
+      const cid = String(data.clientId || "");
+      if (cid && cid !== state.clientId) {
+        toast("他の生徒の希望は編集できません");
+        return;
+      }
+    }
+
+    el.reqOverlay.classList.add("show");
+    clearReqError_();
+
+    if (!el.rStart.options.length) buildTimeOptions_();
+
+    const slot = Number(state.config.slotMinutes || 15);
+    const defStart = state.config.start;
+    const defEnd = minToTime(timeToMin(defStart) + slot);
+
+    el.rDate.value = (data && data.date) ? data.date : (state.anchorDate || toDateStrLocal_(new Date()));
+    el.rDate.readOnly = true;
+
+    el.rStart.value = (data && data.startTime) ? data.startTime : defStart;
+    el.rEnd.value = (data && data.endTime) ? data.endTime : defEnd;
+    ensureReqStartEndValid_();
+
+    el.rTitle.value = (data && data.title) ? data.title : "";
+    el.rName.value = (data && (data.studentName || data.userName)) ? (data.studentName || data.userName) : "";
+    el.rEmail.value = (data && data.studentEmail) ? data.studentEmail : "";
+    el.rNote.value = (data && data.note) ? data.note : "";
+
+    enforceFixedStudentUI_();
+
+    // ボタン制御
+    const isEdit = (mode === "edit");
+    const status = String((data && data.status) ? data.status : "pending");
+
+    el.reqTitle.textContent = isEdit ? "希望を編集" : "希望を提出";
+
+    el.reqDeleteBtn.style.display = (isEdit && (!state.isAdmin)) ? "" : (isEdit && state.isAdmin ? "" : "none");
+    el.reqApproveBtn.style.display = (isEdit && state.isAdmin && status === "pending") ? "" : "none";
+    el.reqRejectBtn.style.display = (isEdit && state.isAdmin && status === "pending") ? "" : "none";
+
+    el.reqSaveBtn.textContent = isEdit ? "更新" : "提出";
+
+    validateReqLive_();
+
+    setTimeout(() => (el.rTitle || el.rStart).focus(), 0);
+  }
+
+  function closeRequestModal_(){
+    el.reqOverlay.classList.remove("show");
+    state.editingReqId = null;
+    restoreFocus_();
+  }
+
+  async function saveRequest_(){
+    try {
+      validateReqLive_();
+      if (el.reqSaveBtn.disabled) return;
+
+      el.reqSaveBtn.disabled = true;
+      const isEdit = !!state.editingReqId;
+      el.reqSaveBtn.textContent = isEdit ? "更新中…" : "提出中…";
+
+      const payload = {
+        resourceId: state.teacherId,
+        date: String(el.rDate.value || "").trim(),
+        startTime: el.rStart.value,
+        endTime: el.rEnd.value,
+        title: String(el.rTitle.value || "").trim(),
+        studentName: FIXED_STUDENT_NAME,
+        studentEmail: String(el.rEmail.value || "").trim(),
+        note: String(el.rNote.value || "").trim(),
+      };
+
+      let res;
+      if (isEdit) {
+        res = await runGAS("updateRequest", state.clientId, state.editingReqId, payload, state.adminKey);
+      } else {
+        res = await runGAS("createRequest", state.clientId, payload);
+      }
+
+      if (!res || !res.ok) throw new Error(res && res.message ? res.message : "保存に失敗しました");
+
+      closeRequestModal_();
+      await loadWeek_(payload.date, true);
+      toast(isEdit ? "更新しました" : "提出しました");
+
+    } catch (err) {
+      showReqError_(String(err && err.message ? err.message : err));
+    } finally {
+      el.reqSaveBtn.disabled = false;
+      el.reqSaveBtn.textContent = state.editingReqId ? "更新" : "提出";
+    }
+  }
+
+  async function deleteRequest_(){
+    try {
+      if (!state.editingReqId) return;
+      if (!confirm("この希望を削除しますか？")) return;
+
+      el.reqDeleteBtn.disabled = true;
+      el.reqDeleteBtn.textContent = "削除中…";
+
+      const res = await runGAS("deleteRequest", state.clientId, state.editingReqId, state.adminKey);
+      if (!res || !res.ok) throw new Error(res && res.message ? res.message : "削除に失敗しました");
+
+      closeRequestModal_();
+      await loadWeek_(state.anchorDate || toDateStrLocal_(new Date()), true);
+      toast("削除しました");
+    } catch (err) {
+      toast(String(err && err.message ? err.message : err));
+    } finally {
+      el.reqDeleteBtn.disabled = false;
+      el.reqDeleteBtn.textContent = "削除";
+    }
+  }
+
+  async function approveRequest_(){
+    try {
+      if (!state.editingReqId) return;
+      el.reqApproveBtn.disabled = true;
+      el.reqApproveBtn.textContent = "確定中…";
+
+      const res = await runGAS("approveRequest", state.adminKey, state.editingReqId);
+      if (!res || !res.ok) throw new Error(res && res.message ? res.message : "確定に失敗しました");
+
+      closeRequestModal_();
+      await loadWeek_(state.anchorDate || toDateStrLocal_(new Date()), true);
+      toast("授業として確定しました");
+    } catch (err) {
+      toast(String(err && err.message ? err.message : err));
+    } finally {
+      el.reqApproveBtn.disabled = false;
+      el.reqApproveBtn.textContent = "確定（授業化）";
+    }
+  }
+
+  async function rejectRequest_(){
+    try {
+      if (!state.editingReqId) return;
+      const reason = prompt("却下理由（任意）", "");
+      el.reqRejectBtn.disabled = true;
+      el.reqRejectBtn.textContent = "却下中…";
+
+      const res = await runGAS("rejectRequest", state.adminKey, state.editingReqId, reason || "");
+      if (!res || !res.ok) throw new Error(res && res.message ? res.message : "却下に失敗しました");
+
+      closeRequestModal_();
+      await loadWeek_(state.anchorDate || toDateStrLocal_(new Date()), true);
+      toast("却下しました");
+    } catch (err) {
+      toast(String(err && err.message ? err.message : err));
+    } finally {
+      el.reqRejectBtn.disabled = false;
+      el.reqRejectBtn.textContent = "却下";
+    }
+  }
+
+  function startSelection_(col, clientY, pointerId){
+    const date = col.dataset.date;
+    const slot = Number(state.config.slotMinutes || 15);
+
+    const today = toDateStrLocal_(new Date());
+    const baseStart = (date === today)
+      ? Math.ceil(getNowMin_() / slot) * slot
+      : timeToMin(state.config.start);
+
+    const startMin = Math.max(baseStart, clientYToMin_(clientY));
+    const endMin = clamp(startMin + slot, timeToMin(state.config.start), timeToMin(state.config.end));
+
+    const sel = document.createElement("div");
+    sel.className = "selection";
+    const label = document.createElement("div");
+    label.className = "selectionLabel";
+    sel.appendChild(label);
+
+    state.lastPointerY = clientY;
+    state.dragging = {
+      pointerId,
+      col,
+      date,
+      startMin,
+      endMin,
+      anchorMin: startMin,
+      sel,
+      label,
+    };
+
+    col.appendChild(sel);
+    updateSelectionUI_();
+  }
+
+  function updateSelectionUI_(){
+    if (!state.dragging) return;
+
+    const openMin = timeToMin(state.config.start);
+    const pxPerMin = Number(getComputedStyle(document.documentElement).getPropertyValue("--pxPerMin")) || 3;
+    const top = (state.dragging.startMin - openMin) * pxPerMin;
+    const height = Math.max(8, (state.dragging.endMin - state.dragging.startMin) * pxPerMin);
+
+    state.dragging.sel.style.top = `${top}px`;
+    state.dragging.sel.style.height = `${height}px`;
+    if (state.dragging.label) {
+      const startLabel = minToTime(state.dragging.startMin);
+      const endLabel = minToTime(state.dragging.endMin);
+      state.dragging.label.textContent = `${startLabel} - ${endLabel}`;
+      state.dragging.label.style.display = (height >= 24) ? "inline-flex" : "none";
+    }
+  }
+
+  function endSelection_(){
+    if (!state.dragging) return;
+
+    const slot = Number(state.config.slotMinutes || 15);
+    const startTime = minToTime(state.dragging.startMin);
+    const endTime = minToTime(state.dragging.endMin);
+
+    state.dragging.sel.remove();
+
+    const base = {
+      date: state.dragging.date,
+      startTime,
+      endTime,
+    };
+
+    if (state.mode === "request") {
+      openRequestModal_("new", {
+        resourceId: state.teacherId,
+        ...base,
+        title: "",
+        studentName: "",
+        studentEmail: "",
+        note: "",
+        status: "pending",
+      });
+    } else {
+      openModal_("new", {
+        resourceId: state.teacherId,
+        ...base,
+        title: "",
+        userName: "",
+        isVisitor: false,
+      }, false);
+    }
+
+    state.dragging = null;
+    setDragAutoScroll_(0);
+    state.lastPointerY = null;
+  }
+
+
+  function onColPointerDown_(ev){
+    // 左クリック（主ボタン）のみ
+    if (ev.button !== undefined && ev.button !== 0) return;
+    const col = ev.currentTarget;
+
+    // booking / request がターゲットならそちらが処理
+    if (ev.target && ev.target.closest && (ev.target.closest('.booking') || ev.target.closest('.request'))) return;
+
+    // 生徒：希望モードのみ / 先生：スケジュールも可
+    if (state.mode !== 'request' && !state.isAdmin) return;
+
+    ev.preventDefault();
+
+    document.documentElement.classList.add('selecting');
+
+    try { col.setPointerCapture(ev.pointerId); } catch (_) {}
+
+    startSelection_(col, ev.clientY, ev.pointerId);
+    updateDragAutoScroll_(ev.clientY);
+
+    const move = (e) => {
+      if (!state.dragging || e.pointerId !== state.dragging.pointerId) return;
+      e.preventDefault();
+
+      state.lastPointerY = e.clientY;
+      updateDragSelection_(e.clientY);
+      updateDragAutoScroll_(e.clientY);
+    };
+
+    const cleanup = () => {
+      document.documentElement.classList.remove('selecting');
+      col.removeEventListener('pointermove', move);
+      col.removeEventListener('pointerup', up);
+      col.removeEventListener('pointercancel', cancel);
+      col.removeEventListener('lostpointercapture', cancel);
+      setDragAutoScroll_(0);
+      state.lastPointerY = null;
+    };
+
+    const up = (e) => {
+      if (!state.dragging || e.pointerId !== state.dragging.pointerId) return;
+      e.preventDefault();
+      cleanup();
+      try { col.releasePointerCapture(e.pointerId); } catch (_) {}
+      endSelection_();
+    };
+
+    const cancel = (e) => {
+      if (!state.dragging || e.pointerId !== state.dragging.pointerId) return;
+      cleanup();
+      try { state.dragging.sel && state.dragging.sel.remove(); } catch (_) {}
+      state.dragging = null;
+    };
+
+    col.addEventListener('pointermove', move);
+    col.addEventListener('pointerup', up);
+    col.addEventListener('pointercancel', cancel);
+    col.addEventListener('lostpointercapture', cancel);
+  }
+
+
+  // -----------------
+  // Events
+  // -----------------
+  function bindEvents_(){
+    el.reloadBtn.addEventListener("click", async () => {
+      await loadWeek_(state.anchorDate || toDateStrLocal_(new Date()), true);
+      toast("再読み込みしました");
+    });
+
+    el.datePicker.addEventListener("change", async () => {
+      const d = el.datePicker.value;
+      if (!d) return;
+      await loadWeek_(d, true);
+    });
+
+    el.prevWeekBtn.addEventListener("click", async () => {
+      const d = addDaysYmd_(state.anchorDate || toDateStrLocal_(new Date()), -7);
+      await loadWeek_(d, true);
+    });
+
+    el.nextWeekBtn.addEventListener("click", async () => {
+      const d = addDaysYmd_(state.anchorDate || toDateStrLocal_(new Date()), 7);
+      await loadWeek_(d, true);
+    });
+
+    el.modeScheduleBtn.addEventListener("click", () => {
+      setMode_("schedule");
+      toast("スケジュール表示");
+    });
+
+    el.modeRequestBtn.addEventListener("click", () => {
+      setMode_("request");
+      toast("希望提出モード");
+    });
+
+    el.newBtn.addEventListener("click", () => {
+      const slot = Number(state.config.slotMinutes || 15);
+      const defStart = state.config.start;
+      const defEnd = minToTime(timeToMin(defStart) + slot);
+      const date = state.anchorDate || toDateStrLocal_(new Date());
+      openModal_("new", { resourceId: state.teacherId, date, startTime: defStart, endTime: defEnd, title: "", userName: "", isVisitor: false }, false);
+    });
+
+    el.modalClose.addEventListener("click", closeModal_);
+    el.modalOverlay.addEventListener("click", (ev) => {
+      if (ev.target === el.modalOverlay) closeModal_();
+    });
+
+    // request modal
+    el.reqClose.addEventListener("click", closeRequestModal_);
+    el.reqOverlay.addEventListener("click", (ev) => {
+      if (ev.target === el.reqOverlay) closeRequestModal_();
+    });
+
+    el.rStart.addEventListener("change", () => { ensureReqStartEndValid_(); validateReqLive_(); });
+    el.rEnd.addEventListener("change", () => { ensureReqStartEndValid_(); validateReqLive_(); });
+    el.rName.addEventListener("input", validateReqLive_);
+    el.rTitle.addEventListener("input", validateReqLive_);
+    el.rEmail.addEventListener("input", validateReqLive_);
+    el.rNote.addEventListener("input", validateReqLive_);
+
+    el.reqSaveBtn.addEventListener("click", async () => { await saveRequest_(); });
+    el.reqDeleteBtn.addEventListener("click", async () => { await deleteRequest_(); });
+    el.reqApproveBtn.addEventListener("click", async () => { await approveRequest_(); });
+    el.reqRejectBtn.addEventListener("click", async () => { await rejectRequest_(); });
+
+    el.saveBtn.addEventListener("click", async () => { await saveModal_(); });
+
+    el.deleteBtn.addEventListener("click", async () => {
+      if (!confirm("この授業を削除しますか？")) return;
+      await confirmDelete_();
+    });
+
+    el.confirmDeleteBtn.addEventListener("click", async () => { await confirmDelete_(); });
+
+    el.mResource.addEventListener("change", validateModalLive_);
+    el.mDate.addEventListener("input", validateModalLive_);
+    el.mStart.addEventListener("change", () => { ensureStartEndValid_(); validateModalLive_(); });
+    el.mEnd.addEventListener("change", () => { ensureStartEndValid_(); validateModalLive_(); });
+    el.mTitle.addEventListener("input", validateModalLive_);
+    el.mUser.addEventListener("input", validateModalLive_);
+
+    // toggle
+    const setToggle = (on) => { setToggle_(on); validateModalLive_(); };
+    el.mVisitorToggle.addEventListener("click", () => setToggle(!el.mVisitorToggle.classList.contains("on")));
+    el.mVisitorToggle.addEventListener("keydown", (ev) => {
+      if (ev.key === "Enter" || ev.key === " ") {
+        ev.preventDefault();
+        setToggle(!el.mVisitorToggle.classList.contains("on"));
+      }
+    });
+
+    // pdf
+    el.pdfOpenBtn.addEventListener("click", () => {
+      const url = el.pdfOpenBtn.dataset.url;
+      if (url) window.open(url, "_blank");
+    });
+
+    el.pdfCopyBtn.addEventListener("click", async () => {
+      const url = el.pdfCopyBtn.dataset.url;
+      if (!url) return;
+      try {
+        await navigator.clipboard.writeText(url);
+        toast("リンクをコピーしました");
+      } catch (e) {
+        toast("コピーできませんでした");
+      }
+    });
+
+    el.pdfUploadBtn.addEventListener("click", () => {
+      if (!state.editingId) {
+        toast("先に保存してください");
+        return;
+      }
+      el.pdfFile.value = "";
+      el.pdfFile.click();
+    });
+
+    el.pdfFile.addEventListener("change", async () => {
+      const f = el.pdfFile.files && el.pdfFile.files[0];
+      await uploadPdf_(f);
+    });
+
+    document.addEventListener("keydown", async (ev) => {
+      const bookingOpen = el.modalOverlay.classList.contains("show");
+      const reqOpen = el.reqOverlay.classList.contains("show");
+      if (!bookingOpen && !reqOpen) return;
+
+      if (ev.key === "Escape") {
+        ev.preventDefault();
+        if (bookingOpen) closeModal_();
+        if (reqOpen) closeRequestModal_();
+        return;
+      }
+
+      if (ev.key === "Enter") {
+        const a = document.activeElement;
+        const tag = (a && a.tagName) ? a.tagName.toLowerCase() : "";
+        if (tag === "select") return;
+
+        ev.preventDefault();
+        if (reqOpen) await saveRequest_();
+        else await saveModal_();
+      }
+    });
+
+    window.addEventListener("resize", onResize_);
+  }
+
+  // -----------------
+  // Init
+  // -----------------
+  initAuthAndClient_();
+  bindEvents_();
+  loadInit_();
+})();
+
+
+  </script>
+</body>
+</html>
