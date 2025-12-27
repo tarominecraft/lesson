@@ -1932,7 +1932,7 @@
       state.days = normalizeDays_(res.data.days || []);
       state.bookings = res.data.bookings || [];
       state.requests = res.data.requests || [];
-      state.isAdmin = !!res.data.isAdmin;
+      state.isAdmin = !!(res.data.isAdmin || state.adminKey);
 
       updateAdminToggleUI_();
 
@@ -1976,7 +1976,7 @@
       state.days = normalizeDays_(res.data.days || []);
       state.bookings = res.data.bookings || [];
       state.requests = res.data.requests || [];
-      state.isAdmin = !!res.data.isAdmin;
+      state.isAdmin = !!(res.data.isAdmin || state.adminKey);
       el.newBtn.style.display = state.isAdmin ? "" : "none";
 
       updateAdminToggleUI_();
