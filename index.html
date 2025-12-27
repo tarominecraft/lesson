@@ -2765,6 +2765,9 @@
       }
 
       state.adminKey = pwd;
+      state.isAdmin = true;
+      updateAdminToggleUI_();
+      el.newBtn.style.display = "";
       toast("管理者モードに切り替えました");
       await loadWeek_(state.anchorDate || toDateStrLocal_(new Date()), true);
     });
