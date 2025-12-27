@@ -41,6 +41,7 @@
       --gridH: 2000px;
       --slotPx: 45px;
       --hourPx: 180px;
+      --slotPxBase: 44;
     }
 
     * { box-sizing: border-box; }
@@ -257,6 +258,12 @@
       min-width: calc(var(--timew) + 7 * var(--colw));
       width: 100%;
     }
+
+    @media (max-width: 980px){ .canvas{ min-width: calc(var(--timew) + 3 * var(--colw)); } }
+    @media (max-width: 760px){ .canvas{ min-width: calc(var(--timew) + 2 * var(--colw)); } }
+    @media (max-width: 520px){ .canvas{ min-width: calc(var(--timew) + 1 * var(--colw)); } }
+    @media (max-width: 420px){ .canvas{ min-width: calc(var(--timew) + 1.2 * var(--colw)); } }
+    @media (max-width: 380px){ .canvas{ min-width: auto; } }
 
     .headerRow{
       position: sticky;
@@ -824,10 +831,26 @@
       transform: translateX(-50%) translateY(0);
     }
 
+    @media (max-width: 600px){
+      :root{ --colw: 162px; --timew: 72px; --slotPxBase: 40; }
+    }
+
     @media (max-width: 520px){
-      :root{ --colw: 156px; --timew: 70px; }
+      :root{ --colw: 156px; --timew: 70px; --slotPxBase: 38; }
       .topbarRight{ gap: 8px; }
       .btn{ padding: 10px 10px; }
+    }
+
+    @media (max-width: 480px){
+      :root{ --colw: 142px; --timew: 64px; --slotPxBase: 36; }
+    }
+
+    @media (max-width: 420px){
+      :root{ --colw: 132px; --timew: 60px; --slotPxBase: 34; }
+    }
+
+    @media (max-width: 380px){
+      :root{ --colw: 124px; --timew: 58px; --slotPxBase: 32; }
     }
   
     /* =========================
@@ -864,7 +887,18 @@
     @media (max-width: 420px){
       .field label{ display:none; }
       .btn{ padding: 10px 10px; font-size: 12px; }
-      :root{ --colw: 146px; --timew: 66px; }
+      .topbar{ padding: 6px 8px; }
+    }
+
+    @media (max-width: 460px){
+      .topbar{ padding: 6px 8px; }
+      .headerCell{ padding: 6px 6px 4px; }
+    }
+
+    @media (max-width: 380px){
+      .topbar{ padding: 4px 6px; }
+      .headerCell{ padding: 6px 6px 4px; }
+      .title{ font-size: 13px; }
     }
 
   
@@ -932,6 +966,14 @@
             <div class="seg" role="tablist" aria-label="表示モード">
               <button id="modeScheduleBtn" class="segBtn" type="button" role="tab" aria-selected="true">スケジュール</button>
               <button id="modeRequestBtn" class="segBtn" type="button" role="tab" aria-selected="false">希望</button>
+            </div>
+          </div>
+
+          <div class="field" id="rangeField">
+            <label>幅</label>
+            <div class="seg" role="tablist" aria-label="日数の表示幅">
+              <button id="viewDayBtn" class="segBtn" type="button" role="tab" aria-selected="false">1日</button>
+              <button id="viewWeekBtn" class="segBtn active" type="button" role="tab" aria-selected="true">週</button>
             </div>
           </div>
 
@@ -1145,11 +1187,16 @@
     isAdmin: false,
     clientId: "",
     mode: "schedule", // schedule | request
+    viewMode: "week", // week | day
+    viewStartDate: "",
     lastPointerY: null,
     dragAutoScrollDir: 0,
     dragAutoScrollRaf: 0,
     lastFocus: null,
   };
+
+  let touchStartX = null;
+  let touchHandled = false;
 
 
   const FIXED_STUDENT_NAME = "だいちゃん";
@@ -1181,6 +1228,8 @@
 
     modeScheduleBtn: document.getElementById("modeScheduleBtn"),
     modeRequestBtn: document.getElementById("modeRequestBtn"),
+    viewDayBtn: document.getElementById("viewDayBtn"),
+    viewWeekBtn: document.getElementById("viewWeekBtn"),
     datePicker: document.getElementById("datePicker"),
     prevWeekBtn: document.getElementById("prevWeekBtn"),
     nextWeekBtn: document.getElementById("nextWeekBtn"),
@@ -1260,6 +1309,19 @@
     el.modeScheduleBtn.classList.toggle("active", !isReq);
     el.modeRequestBtn.setAttribute("aria-selected", isReq ? "true" : "false");
     el.modeScheduleBtn.setAttribute("aria-selected", !isReq ? "true" : "false");
+  }
+
+  function setViewMode_(mode){
+    state.viewMode = (mode === "day") ? "day" : "week";
+    const isDay = state.viewMode === "day";
+    el.viewDayBtn.classList.toggle("active", isDay);
+    el.viewWeekBtn.classList.toggle("active", !isDay);
+    el.viewDayBtn.setAttribute("aria-selected", isDay ? "true" : "false");
+    el.viewWeekBtn.setAttribute("aria-selected", !isDay ? "true" : "false");
+
+    if (isDay && !state.viewStartDate) {
+      state.viewStartDate = state.anchorDate || (state.days[0] && state.days[0].date) || "";
+    }
   }
 
   // -----------------
@@ -1485,12 +1547,42 @@
   }
 
   function computeSlotPxBase_(){
-    // 目安：mobile=38〜40 / desktop=44 / large=48
+    // CSS側の --slotPxBase を尊重しつつ、画面幅に応じて更に圧縮
+    const root = document.documentElement;
+    const cssBaseRaw = getComputedStyle(root).getPropertyValue("--slotPxBase") || "44";
+    const cssBase = Number(String(cssBaseRaw).replace("px", "")) || 44;
+
     const w = window.innerWidth || 800;
     const h = window.innerHeight || 800;
-    if (w < 520) return 38;
-    if (w >= 1200 && h >= 820) return 48;
-    return 44;
+
+    let base = cssBase;
+    if (w < 340) base = Math.min(base, 30);
+    else if (w < 380) base = Math.min(base, 32);
+    else if (w < 430) base = Math.min(base, 34);
+    else if (w < 520) base = Math.min(base, 38);
+    else if (w < 640) base = Math.min(base, 40);
+    else if (w >= 1200 && h >= 820) base = Math.max(base, 48);
+
+    return base;
+  }
+
+  function getDaysPerView_(){
+    if (state.viewMode !== "day") return state.days.length || 7;
+    const w = window.innerWidth || 800;
+    if (w < 420) return 1;
+    if (w < 640) return 2;
+    return 3;
+  }
+
+  function getVisibleDays_(){
+    const daysPerView = getDaysPerView_();
+    if (state.viewMode !== "day") return state.days;
+
+    let startDate = state.viewStartDate || state.anchorDate || (state.days[0] && state.days[0].date) || "";
+    const idx = state.days.findIndex(d => d.date === startDate);
+    const startIdx = (idx >= 0) ? idx : 0;
+    const fallbackStart = Math.max(0, Math.min(startIdx, Math.max(0, state.days.length - daysPerView)));
+    return state.days.slice(fallbackStart, fallbackStart + daysPerView);
   }
 
   function computeColWidth_(){
@@ -1503,11 +1595,11 @@
     const avail = (el.scroll && el.scroll.clientWidth) ? el.scroll.clientWidth : (window.innerWidth || 1000);
 
     const isMobile = (window.innerWidth || 800) < 520;
-    const minCol = isMobile ? 118 : 150;
+    const minCol = isMobile ? 112 : 150;
     // 画面が広い場合でもなるべく「余白が出ない」ように上限を少し緩める
     const maxCol = isMobile ? 168 : 340;
 
-    const ideal = Math.floor((avail - timew) / 7);
+    const ideal = Math.floor((avail - timew) / Math.max(1, getDaysPerView_()));
     const colw = clamp(ideal, minCol, maxCol);
     root.style.setProperty("--colw", `${colw}px`);
   }
@@ -1546,7 +1638,8 @@
   function renderStructure_(){
     // headers (7日)
     el.headers.innerHTML = "";
-    for (const d of state.days) {
+    const daysToRender = getVisibleDays_();
+    for (const d of daysToRender) {
       const cell = document.createElement("div");
       cell.className = "headerCell";
       cell.dataset.date = d.date;
@@ -1593,7 +1686,7 @@
     el.colsWrap.innerHTML = "";
     const gridH = getComputedStyle(document.documentElement).getPropertyValue("--gridH");
 
-    for (const d of state.days) {
+    for (const d of daysToRender) {
       const col = document.createElement("div");
       col.className = "col";
       col.dataset.date = d.date;
@@ -1753,6 +1846,45 @@
     col.appendChild(dot);
   }
 
+  function renderAll_(keepScroll){
+    const beforeTop = keepScroll ? el.scroll.scrollTop : 0;
+    const beforeLeft = keepScroll ? el.scroll.scrollLeft : 0;
+
+    computeColWidth_();
+    renderStructure_();
+    clearBookings_();
+    renderBookings_();
+    renderRequests_();
+    renderNowLine_();
+
+    if (keepScroll) {
+      el.scroll.scrollTop = beforeTop;
+      el.scroll.scrollLeft = beforeLeft;
+    }
+  }
+
+  async function shiftView_(dir){
+    const direction = dir >= 0 ? 1 : -1;
+
+    if (state.viewMode === "week") {
+      const d = addDaysYmd_(state.anchorDate || toDateStrLocal_(new Date()), direction * 7);
+      await loadWeek_(d, true);
+      return;
+    }
+
+    const base = state.viewStartDate || state.anchorDate || (state.days[0] && state.days[0].date) || toDateStrLocal_(new Date());
+    const target = addDaysYmd_(base, direction);
+    const withinLoaded = state.days.some(d => d.date === target);
+
+    if (withinLoaded) {
+      state.viewStartDate = target;
+      renderAll_(true);
+      return;
+    }
+
+    await loadWeek_(target, true, target);
+  }
+
   function scrollToNow_(){
     const today = toDateStrLocal_(new Date());
     const col = el.colsWrap.querySelector(`.col[data-date="${today}"]`);
@@ -1796,26 +1928,23 @@
 
       const initMode = (state._initialModeParam === "request" || !state.isAdmin) ? "request" : "schedule";
       setMode_(initMode);
+      setViewMode_("week");
 
       enforceFixedStudentUI_();
 
-      computeColWidth_();
       applyConfigToCSS_();
-      renderStructure_();
+      state.viewStartDate = state.anchorDate;
+      renderAll_(false);
 
       el.datePicker.value = state.anchorDate;
 
-      clearBookings_();
-      renderBookings_();
-      renderRequests_();
-      renderNowLine_();
       scrollToNow_();
     } catch (err) {
       toast(String(err && err.message ? err.message : err));
     }
   }
 
-  async function loadWeek_(anchorDateStr, keepScroll){
+  async function loadWeek_(anchorDateStr, keepScroll, viewStartDate){
     try {
       const beforeTop = el.scroll.scrollTop;
       const beforeLeft = el.scroll.scrollLeft;
@@ -1833,12 +1962,13 @@
       state.isAdmin = !!res.data.isAdmin;
       el.newBtn.style.display = state.isAdmin ? "" : "none";
 
-      computeColWidth_();
-      renderStructure_();
-      clearBookings_();
-      renderBookings_();
-      renderRequests_();
-      renderNowLine_();
+      if (viewStartDate) {
+        state.viewStartDate = viewStartDate;
+      } else if (state.viewMode === "week") {
+        state.viewStartDate = state.anchorDate;
+      }
+
+      renderAll_(keepScroll);
 
       if (keepScroll) {
         el.scroll.scrollTop = beforeTop;
@@ -1856,13 +1986,8 @@
     resizeTimer_ = setTimeout(() => {
       if (!state.config) return;
       state.slotPxBase = computeSlotPxBase_();
-      computeColWidth_();
       applyConfigToCSS_();
-      renderStructure_();
-      clearBookings_();
-      renderBookings_();
-      renderRequests_();
-      renderNowLine_();
+      renderAll_(true);
     }, 120);
   }
 
@@ -2563,17 +2688,15 @@
     el.datePicker.addEventListener("change", async () => {
       const d = el.datePicker.value;
       if (!d) return;
-      await loadWeek_(d, true);
+      await loadWeek_(d, true, state.viewMode === "day" ? d : undefined);
     });
 
     el.prevWeekBtn.addEventListener("click", async () => {
-      const d = addDaysYmd_(state.anchorDate || toDateStrLocal_(new Date()), -7);
-      await loadWeek_(d, true);
+      await shiftView_(-1);
     });
 
     el.nextWeekBtn.addEventListener("click", async () => {
-      const d = addDaysYmd_(state.anchorDate || toDateStrLocal_(new Date()), 7);
-      await loadWeek_(d, true);
+      await shiftView_(1);
     });
 
     el.modeScheduleBtn.addEventListener("click", () => {
@@ -2584,6 +2707,44 @@
     el.modeRequestBtn.addEventListener("click", () => {
       setMode_("request");
       toast("希望提出モード");
+    });
+
+    el.viewWeekBtn.addEventListener("click", () => {
+      setViewMode_("week");
+      state.viewStartDate = state.anchorDate;
+      renderAll_(true);
+    });
+
+    el.viewDayBtn.addEventListener("click", () => {
+      setViewMode_("day");
+      state.viewStartDate = state.viewStartDate || state.anchorDate || (state.days[0] && state.days[0].date) || "";
+      renderAll_(true);
+    });
+
+    el.scroll.addEventListener("touchstart", (ev) => {
+      if (state.viewMode !== "day") return;
+      touchHandled = false;
+      const t = ev.touches && ev.touches[0];
+      touchStartX = t ? t.clientX : null;
+    });
+
+    el.scroll.addEventListener("touchmove", async (ev) => {
+      if (state.viewMode !== "day") return;
+      if (touchStartX === null || touchHandled) return;
+      const t = ev.touches && ev.touches[0];
+      if (!t) return;
+      const dx = t.clientX - touchStartX;
+      if (Math.abs(dx) > 50) {
+        touchHandled = true;
+        ev.preventDefault();
+        await shiftView_(dx < 0 ? 1 : -1);
+        touchStartX = null;
+      }
+    });
+
+    el.scroll.addEventListener("touchend", () => {
+      touchStartX = null;
+      touchHandled = false;
     });
 
     el.newBtn.addEventListener("click", () => {
