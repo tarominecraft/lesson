@@ -1187,6 +1187,7 @@
     adminKey: "",
     isAdmin: false,
     clientId: "",
+    requestBusy: false,
     mode: "schedule", // schedule | request
     viewMode: "week", // week | day
     viewStartDate: "",
@@ -1822,8 +1823,13 @@
 
       card.addEventListener("pointerdown", (ev) => {
         ev.stopPropagation();
+      });
+
+      card.addEventListener("click", async (ev) => {
+        ev.stopPropagation();
         ev.preventDefault();
-        openRequestModal_("edit", r);
+        const handled = await maybeApproveFromCard_(r);
+        if (!handled) openRequestModal_("edit", r);
       });
 
       col.appendChild(card);
@@ -2532,6 +2538,34 @@
     } finally {
       el.reqRejectBtn.disabled = false;
       el.reqRejectBtn.textContent = "却下";
+    }
+  }
+
+  async function maybeApproveFromCard_(req){
+    if (!state.isAdmin || !req || !req.id) return false;
+    const status = String(req.status || "pending");
+    if (status !== "pending") return false;
+    if (state.requestBusy) {
+      toast("処理中です…");
+      return true;
+    }
+
+    const ok = confirm(`管理者モードです。この希望を授業として確定しますか？\n${req.date} ${req.startTime}–${req.endTime}`);
+    if (!ok) return false;
+
+    try {
+      state.requestBusy = true;
+      const res = await runGAS("approveRequest", state.adminKey, req.id);
+      if (!res || !res.ok) throw new Error(res && res.message ? res.message : "確定に失敗しました");
+
+      toast("希望を授業として確定しました");
+      await loadWeek_(state.anchorDate || toDateStrLocal_(new Date()), true);
+      return true;
+    } catch (err) {
+      toast(String(err && err.message ? err.message : err));
+      return false;
+    } finally {
+      state.requestBusy = false;
     }
   }
 
