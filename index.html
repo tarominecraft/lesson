@@ -985,6 +985,7 @@
           <button id="prevWeekBtn" class="btn" type="button">＜</button>
           <button id="nextWeekBtn" class="btn" type="button">＞</button>
           <button id="reloadBtn" class="btn" type="button">再読み込み</button>
+          <button id="adminToggleBtn" class="btn" type="button">管理者モード</button>
           <button id="newBtn" class="btn primary" type="button">＋ 授業</button>
         </div>
       </div>
@@ -1234,6 +1235,7 @@
     prevWeekBtn: document.getElementById("prevWeekBtn"),
     nextWeekBtn: document.getElementById("nextWeekBtn"),
     reloadBtn: document.getElementById("reloadBtn"),
+    adminToggleBtn: document.getElementById("adminToggleBtn"),
     newBtn: document.getElementById("newBtn"),
 
     modalOverlay: document.getElementById("modalOverlay"),
@@ -1322,6 +1324,13 @@
     if (isDay && !state.viewStartDate) {
       state.viewStartDate = state.anchorDate || (state.days[0] && state.days[0].date) || "";
     }
+  }
+
+  function updateAdminToggleUI_(){
+    const on = !!state.isAdmin;
+    el.adminToggleBtn.textContent = on ? "管理者モード中" : "管理者モード";
+    el.adminToggleBtn.classList.toggle("primary", on);
+    el.adminToggleBtn.setAttribute("aria-pressed", on ? "true" : "false");
   }
 
   // -----------------
@@ -1919,6 +1928,8 @@
       state.requests = res.data.requests || [];
       state.isAdmin = !!res.data.isAdmin;
 
+      updateAdminToggleUI_();
+
       const t = state.resources.find(r => r.resourceId === state.teacherId);
       state.teacherName = t ? (t.resourceName || "") : "";
 
@@ -1961,6 +1972,8 @@
       state.requests = res.data.requests || [];
       state.isAdmin = !!res.data.isAdmin;
       el.newBtn.style.display = state.isAdmin ? "" : "none";
+
+      updateAdminToggleUI_();
 
       if (viewStartDate) {
         state.viewStartDate = viewStartDate;
@@ -2697,6 +2710,29 @@
 
     el.nextWeekBtn.addEventListener("click", async () => {
       await shiftView_(1);
+    });
+
+    el.adminToggleBtn.addEventListener("click", async () => {
+      if (state.isAdmin) {
+        state.adminKey = "";
+        state.isAdmin = false;
+        updateAdminToggleUI_();
+        el.newBtn.style.display = "none";
+        await loadWeek_(state.anchorDate || toDateStrLocal_(new Date()), true);
+        toast("管理者モードを終了しました");
+        return;
+      }
+
+      const pwd = prompt("管理者パスワードを入力してください");
+      if (pwd === null) return;
+      if (pwd !== "admin") {
+        toast("パスワードが違います");
+        return;
+      }
+
+      state.adminKey = pwd;
+      toast("管理者モードに切り替えました");
+      await loadWeek_(state.anchorDate || toDateStrLocal_(new Date()), true);
     });
 
     el.modeScheduleBtn.addEventListener("click", () => {
