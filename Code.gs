@@ -4,13 +4,6 @@ const TZ = 'Asia/Tokyo';
 // 外部POST API用トークン（必ず変更してください）
 const API_TOKEN = 'gWMBAMDzh6';
 
-
-/**
- * 管理者キー（先生用URLに ?key=... を付けて使う）
- * - 必ず推測されにくい文字列に変更してください
- */
-const ADMIN_KEY = 'CHANGE_ME';
-
 /**
  * 先生は1名想定（resources シートの先頭行を使用）
  * - 初期作成時はこのID/名前で resources を作ります
@@ -40,17 +33,66 @@ function getConfig_() {
   return { start: '08:00', end: '20:00', slotMinutes: 15, weekStart: 'mon' }; // weekStart: 'mon' or 'sun'
 }
 
-function isAdmin_(adminKey) {
-  return String(adminKey || '') === String(ADMIN_KEY || '');
+function getAdminPassword_() {
+  return PropertiesService.getScriptProperties().getProperty('ADMIN_PASSWORD') || '';
 }
-function assertAdmin_(adminKey) {
-  if (!isAdmin_(adminKey)) throw new Error('権限がありません（adminKey）');
+
+function adminEnabled_() {
+  return !!getAdminPassword_();
+}
+
+function assertAdminConfigured_() {
+  if (adminEnabled_()) return;
+  const err = new Error('管理者パスワードが設定されていません');
+  err.code = 'ADMIN_NOT_CONFIGURED';
+  throw err;
+}
+
+function adminTokenCacheKey_(token) {
+  return `adminToken:${token}`;
+}
+
+function isAdminToken_(adminToken) {
+  if (!adminToken) return false;
+  const cache = CacheService.getScriptCache();
+  const key = adminTokenCacheKey_(adminToken);
+  const hit = cache.get(key);
+  if (hit) {
+    cache.put(key, hit, 60 * 30); // extend TTL on use
+  }
+  return !!hit;
+}
+
+function assertAdminToken_(adminToken) {
+  assertAdminConfigured_();
+  if (!isAdminToken_(adminToken)) {
+    const err = new Error('権限がありません（管理者トークン）');
+    err.code = 'ADMIN_TOKEN_INVALID';
+    throw err;
+  }
 }
 
 
 // ================================
 // GAS公開関数（フロントから google.script.run で呼ばれる）
 // ================================
+function adminLogin(password) {
+  try {
+    const expected = getAdminPassword_();
+    if (!expected) return { ok: false, code: 'ADMIN_NOT_CONFIGURED', message: '管理者パスワードが設定されていません' };
+
+    if (String(password || '') !== expected) {
+      return { ok: false, message: 'パスワードが違います' };
+    }
+
+    const adminToken = Utilities.getUuid();
+    CacheService.getScriptCache().put(adminTokenCacheKey_(adminToken), '1', 60 * 30); // 30min TTL
+    return { ok: true, adminToken, ttlSec: 60 * 30 };
+  } catch (err) {
+    return ng_(err);
+  }
+}
+
 function getInit(adminKey) {
   try {
     ensureSheets_();
@@ -69,9 +111,9 @@ function getInit(adminKey) {
     const end = addDaysYmd_(weekStart, 6);
     const bookings = listBookingsRange_(teacherId, weekStart, end);
 
-    const isAdmin = isAdmin_(adminKey);
+    const isAdmin = isAdminToken_(adminKey);
 
-    return ok_({ resources, config, today, teacherId, weekStart, days, bookings, isAdmin });
+    return ok_({ resources, config, today, teacherId, weekStart, days, bookings, isAdmin, adminEnabled: adminEnabled_() });
   } catch (err) {
     return ng_(err);
   }
@@ -97,11 +139,11 @@ function getWeek(anchorDateStr, clientId, adminKey) {
 
     const bookings = listBookingsRange_(teacherId, weekStart, end);
 
-    const isAdmin = isAdmin_(adminKey);
+    const isAdmin = isAdminToken_(adminKey);
     const cid = String(clientId || '').trim();
     const requests = listRequestsRange_(teacherId, weekStart, end, isAdmin ? '' : cid);
 
-    return ok_({ weekStart, days, bookings, requests, isAdmin });
+    return ok_({ weekStart, days, bookings, requests, isAdmin, adminEnabled: adminEnabled_() });
   } catch (err) {
     return ng_(err);
   }
@@ -315,7 +357,7 @@ function uploadBookingPdfInternal_(id, fileName, base64) {
 
 function addBooking(adminKey, data) {
   try {
-    assertAdmin_(adminKey);
+    assertAdminToken_(adminKey);
     return addBookingInternal_(data);
   } catch (err) {
     return ng_(err);
@@ -324,7 +366,7 @@ function addBooking(adminKey, data) {
 
 function updateBooking(adminKey, id, data) {
   try {
-    assertAdmin_(adminKey);
+    assertAdminToken_(adminKey);
     return updateBookingInternal_(id, data);
   } catch (err) {
     return ng_(err);
@@ -333,7 +375,7 @@ function updateBooking(adminKey, id, data) {
 
 function deleteBooking(adminKey, id) {
   try {
-    assertAdmin_(adminKey);
+    assertAdminToken_(adminKey);
     return deleteBookingInternal_(id);
   } catch (err) {
     return ng_(err);
@@ -342,7 +384,7 @@ function deleteBooking(adminKey, id) {
 
 function uploadBookingPdf(adminKey, bookingId, fileName, base64) {
   try {
-    assertAdmin_(adminKey);
+    assertAdminToken_(adminKey);
     return uploadBookingPdfInternal_(bookingId, fileName, base64);
   } catch (err) {
     return ng_(err);
@@ -415,7 +457,7 @@ function updateRequest(clientId, id, data, adminKey) {
     const cid = String(clientId || '').trim();
     if (!cid) throw new Error('clientId が必要です');
 
-    const isAdmin = isAdmin_(adminKey);
+    const isAdmin = isAdminToken_(adminKey);
 
     id = String(id || '').trim();
     if (!id) throw new Error('id が不正です');
@@ -477,7 +519,7 @@ function deleteRequest(clientId, id, adminKey) {
     const cid = String(clientId || '').trim();
     if (!cid) throw new Error('clientId が必要です');
 
-    const isAdmin = isAdmin_(adminKey);
+    const isAdmin = isAdminToken_(adminKey);
 
     id = String(id || '').trim();
     if (!id) throw new Error('id が不正です');
@@ -516,7 +558,7 @@ function deleteRequest(clientId, id, adminKey) {
 function approveRequest(adminKey, requestId) {
   const lock = LockService.getScriptLock();
   try {
-    assertAdmin_(adminKey);
+    assertAdminToken_(adminKey);
     ensureSheets_();
     lock.waitLock(30000);
 
@@ -585,7 +627,7 @@ function approveRequest(adminKey, requestId) {
 function rejectRequest(adminKey, requestId) {
   const lock = LockService.getScriptLock();
   try {
-    assertAdmin_(adminKey);
+    assertAdminToken_(adminKey);
     ensureSheets_();
     lock.waitLock(30000);
 
@@ -1352,5 +1394,6 @@ function ok_(data) {
 
 function ng_(err) {
   const msg = (err && err.message) ? err.message : String(err);
-  return { ok: false, message: msg };
+  const code = (err && err.code) ? String(err.code) : '';
+  return { ok: false, message: msg, code };
 }

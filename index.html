@@ -41,6 +41,7 @@
       --gridH: 2000px;
       --slotPx: 45px;
       --hourPx: 180px;
+      --slotPxBase: 44;
     }
 
     * { box-sizing: border-box; }
@@ -257,6 +258,12 @@
       min-width: calc(var(--timew) + 7 * var(--colw));
       width: 100%;
     }
+
+    @media (max-width: 980px){ .canvas{ min-width: calc(var(--timew) + 3 * var(--colw)); } }
+    @media (max-width: 760px){ .canvas{ min-width: calc(var(--timew) + 2 * var(--colw)); } }
+    @media (max-width: 520px){ .canvas{ min-width: calc(var(--timew) + 1 * var(--colw)); } }
+    @media (max-width: 420px){ .canvas{ min-width: calc(var(--timew) + 1.2 * var(--colw)); } }
+    @media (max-width: 380px){ .canvas{ min-width: auto; } }
 
     .headerRow{
       position: sticky;
@@ -824,12 +831,48 @@
       transform: translateX(-50%) translateY(0);
     }
 
+    /* =========================
+       Responsive sizing & spacing
+       ========================= */
+    @media (max-width: 600px){
+      :root{ --colw: 162px; --timew: 72px; --slotPxBase: 40; }
+    }
+
     @media (max-width: 520px){
-      :root{ --colw: 156px; --timew: 70px; }
-      .topbarRight{ gap: 8px; }
+      :root{ --colw: 156px; --timew: 70px; --slotPxBase: 38; --radius: 18px; --headh: 46px; }
+      .app{ padding: 8px; }
+      .topbar{ padding: 8px 10px; grid-template-columns: 1fr; height: auto; align-items: stretch; }
+      .topbarRight{ gap: 8px; justify-content: flex-start; }
+      .field{ flex: 1 1 220px; }
+      .headerCell{ padding: 8px 8px 6px; }
+      .headerName{ font-size: 12px; }
+      .headerMeta{ font-size: 10px; }
       .btn{ padding: 10px 10px; }
     }
-  
+
+    @media (max-width: 480px){
+      :root{ --colw: 142px; --timew: 64px; --slotPxBase: 36; }
+    }
+
+    @media (max-width: 460px){
+      .topbar{ padding: 6px 8px; }
+      .headerCell{ padding: 6px 6px 4px; }
+    }
+
+    @media (max-width: 420px){
+      :root{ --colw: 132px; --timew: 60px; --slotPxBase: 34; }
+      .field label{ display:none; }
+      .btn{ padding: 10px 10px; font-size: 12px; }
+      .topbar{ padding: 6px 8px; }
+    }
+
+    @media (max-width: 380px){
+      :root{ --colw: 124px; --timew: 58px; --slotPxBase: 32; }
+      .topbar{ padding: 4px 6px; }
+      .headerCell{ padding: 6px 6px 4px; }
+      .title{ font-size: 13px; }
+    }
+
     /* =========================
        Google Sites iframe (mobile) fixes
        ========================= */
@@ -843,45 +886,9 @@
     }
     .topbarRight::-webkit-scrollbar{ display:none; }
 
-    /* iOS / embedded viewport 안정化 */
+    /* iOS / embedded viewport 안정화 */
     body{ min-height: 100dvh; }
     .app{ min-height: 100dvh; }
-
-    @media (max-width: 520px){
-      .app{ padding: 10px; }
-      .topbar{
-        grid-template-columns: 1fr;
-        height: auto;
-        align-items: stretch;
-      }
-      .topbarRight{
-        justify-content: flex-start;
-        gap: 8px;
-      }
-      .field{ flex: 1 1 220px; }
-    }
-
-    @media (max-width: 420px){
-      .field label{ display:none; }
-      .btn{ padding: 10px 10px; font-size: 12px; }
-      :root{ --colw: 146px; --timew: 66px; }
-    }
-
-  
-    /* =========================
-       Mobile compact (show more timeline)
-       ========================= */
-    @media (max-width: 520px){
-      :root{
-        --radius: 18px;
-        --headh: 46px;
-      }
-      .app{ padding: 8px; }
-      .topbar{ padding: 8px 10px; }
-      .headerCell{ padding: 8px 8px 6px; }
-      .headerName{ font-size: 12px; }
-      .headerMeta{ font-size: 10px; }
-    }
 
     /* =========================
        Hour stamps inside each room column
@@ -935,6 +942,14 @@
             </div>
           </div>
 
+          <div class="field" id="rangeField">
+            <label>幅</label>
+            <div class="seg" role="tablist" aria-label="日数の表示幅">
+              <button id="viewDayBtn" class="segBtn" type="button" role="tab" aria-selected="false">1日</button>
+              <button id="viewWeekBtn" class="segBtn active" type="button" role="tab" aria-selected="true">週</button>
+            </div>
+          </div>
+
           <div class="field">
             <label for="datePicker">週</label>
             <input id="datePicker" type="date" />
@@ -943,6 +958,7 @@
           <button id="prevWeekBtn" class="btn" type="button">＜</button>
           <button id="nextWeekBtn" class="btn" type="button">＞</button>
           <button id="reloadBtn" class="btn" type="button">再読み込み</button>
+          <button id="adminToggleBtn" class="btn" type="button">管理者モード</button>
           <button id="newBtn" class="btn primary" type="button">＋ 授業</button>
         </div>
       </div>
@@ -1108,7 +1124,7 @@
 
         <div class="help">
           「希望」モードでは、空き時間をドラッグして希望枠を作れます。<br>
-          先生（管理者）は希望をタップして「確定（授業化）」または「却下」ができます。
+          先生（管理者）はカレンダー上の希望枠をタップするとこの画面が開き、下部右側にある「確定（授業化）」「却下」ボタンで処理できます。
         </div>
       </div>
 
@@ -1143,13 +1159,20 @@
     slotPxBase: 44,
     adminKey: "",
     isAdmin: false,
+    adminEnabled: true,
     clientId: "",
+    requestBusy: false,
     mode: "schedule", // schedule | request
+    viewMode: "week", // week | day
+    viewStartDate: "",
     lastPointerY: null,
     dragAutoScrollDir: 0,
     dragAutoScrollRaf: 0,
     lastFocus: null,
   };
+
+  let touchStartX = null;
+  let touchHandled = false;
 
 
   const FIXED_STUDENT_NAME = "だいちゃん";
@@ -1181,10 +1204,13 @@
 
     modeScheduleBtn: document.getElementById("modeScheduleBtn"),
     modeRequestBtn: document.getElementById("modeRequestBtn"),
+    viewDayBtn: document.getElementById("viewDayBtn"),
+    viewWeekBtn: document.getElementById("viewWeekBtn"),
     datePicker: document.getElementById("datePicker"),
     prevWeekBtn: document.getElementById("prevWeekBtn"),
     nextWeekBtn: document.getElementById("nextWeekBtn"),
     reloadBtn: document.getElementById("reloadBtn"),
+    adminToggleBtn: document.getElementById("adminToggleBtn"),
     newBtn: document.getElementById("newBtn"),
 
     modalOverlay: document.getElementById("modalOverlay"),
@@ -1260,6 +1286,57 @@
     el.modeScheduleBtn.classList.toggle("active", !isReq);
     el.modeRequestBtn.setAttribute("aria-selected", isReq ? "true" : "false");
     el.modeScheduleBtn.setAttribute("aria-selected", !isReq ? "true" : "false");
+  }
+
+  function setViewMode_(mode){
+    state.viewMode = (mode === "day") ? "day" : "week";
+    const isDay = state.viewMode === "day";
+    el.viewDayBtn.classList.toggle("active", isDay);
+    el.viewWeekBtn.classList.toggle("active", !isDay);
+    el.viewDayBtn.setAttribute("aria-selected", isDay ? "true" : "false");
+    el.viewWeekBtn.setAttribute("aria-selected", !isDay ? "true" : "false");
+
+    if (isDay && !state.viewStartDate) {
+      state.viewStartDate = state.anchorDate || (state.days[0] && state.days[0].date) || "";
+    }
+  }
+
+  function updateAdminToggleUI_(){
+    const on = !!state.isAdmin;
+    const adminDisabled = !state.adminEnabled;
+    el.adminToggleBtn.textContent = on ? "管理者モード中" : (adminDisabled ? "管理者未設定" : "管理者モード");
+    el.adminToggleBtn.classList.toggle("primary", on);
+    el.adminToggleBtn.setAttribute("aria-pressed", on ? "true" : "false");
+    el.adminToggleBtn.disabled = adminDisabled && !on;
+    el.adminToggleBtn.title = adminDisabled ? "管理者パスワードが未設定です" : "";
+  }
+
+  function showAdminDisabled_(){
+    toast([
+      "管理者パスワードが未設定です。管理者機能は無効です。",
+      "Apps Script の Script Properties に ADMIN_PASSWORD を設定してください。"
+    ].join(" "));
+  }
+
+  function handleAdminGuardFailure_(res){
+    if (res && res.code === "ADMIN_NOT_CONFIGURED") {
+      state.adminEnabled = false;
+      state.isAdmin = false;
+      state.adminKey = "";
+      el.newBtn.style.display = "none";
+      updateAdminToggleUI_();
+      showAdminDisabled_();
+      return true;
+    }
+    if (res && res.code === "ADMIN_TOKEN_INVALID") {
+      state.isAdmin = false;
+      state.adminKey = "";
+      el.newBtn.style.display = "none";
+      updateAdminToggleUI_();
+      toast("管理者トークンの有効期限が切れました。再度ログインしてください。");
+      return true;
+    }
+    return false;
   }
 
   // -----------------
@@ -1485,12 +1562,42 @@
   }
 
   function computeSlotPxBase_(){
-    // 目安：mobile=38〜40 / desktop=44 / large=48
+    // CSS側の --slotPxBase を尊重しつつ、画面幅に応じて更に圧縮
+    const root = document.documentElement;
+    const cssBaseRaw = getComputedStyle(root).getPropertyValue("--slotPxBase") || "44";
+    const cssBase = Number(String(cssBaseRaw).replace("px", "")) || 44;
+
     const w = window.innerWidth || 800;
     const h = window.innerHeight || 800;
-    if (w < 520) return 38;
-    if (w >= 1200 && h >= 820) return 48;
-    return 44;
+
+    let base = cssBase;
+    if (w < 340) base = Math.min(base, 30);
+    else if (w < 380) base = Math.min(base, 32);
+    else if (w < 430) base = Math.min(base, 34);
+    else if (w < 520) base = Math.min(base, 38);
+    else if (w < 640) base = Math.min(base, 40);
+    else if (w >= 1200 && h >= 820) base = Math.max(base, 48);
+
+    return base;
+  }
+
+  function getDaysPerView_(){
+    if (state.viewMode !== "day") return state.days.length || 7;
+    const w = window.innerWidth || 800;
+    if (w < 420) return 1;
+    if (w < 640) return 2;
+    return 3;
+  }
+
+  function getVisibleDays_(){
+    const daysPerView = getDaysPerView_();
+    if (state.viewMode !== "day") return state.days;
+
+    let startDate = state.viewStartDate || state.anchorDate || (state.days[0] && state.days[0].date) || "";
+    const idx = state.days.findIndex(d => d.date === startDate);
+    const startIdx = (idx >= 0) ? idx : 0;
+    const fallbackStart = Math.max(0, Math.min(startIdx, Math.max(0, state.days.length - daysPerView)));
+    return state.days.slice(fallbackStart, fallbackStart + daysPerView);
   }
 
   function computeColWidth_(){
@@ -1503,11 +1610,11 @@
     const avail = (el.scroll && el.scroll.clientWidth) ? el.scroll.clientWidth : (window.innerWidth || 1000);
 
     const isMobile = (window.innerWidth || 800) < 520;
-    const minCol = isMobile ? 118 : 150;
+    const minCol = isMobile ? 112 : 150;
     // 画面が広い場合でもなるべく「余白が出ない」ように上限を少し緩める
     const maxCol = isMobile ? 168 : 340;
 
-    const ideal = Math.floor((avail - timew) / 7);
+    const ideal = Math.floor((avail - timew) / Math.max(1, getDaysPerView_()));
     const colw = clamp(ideal, minCol, maxCol);
     root.style.setProperty("--colw", `${colw}px`);
   }
@@ -1546,7 +1653,8 @@
   function renderStructure_(){
     // headers (7日)
     el.headers.innerHTML = "";
-    for (const d of state.days) {
+    const daysToRender = getVisibleDays_();
+    for (const d of daysToRender) {
       const cell = document.createElement("div");
       cell.className = "headerCell";
       cell.dataset.date = d.date;
@@ -1593,7 +1701,7 @@
     el.colsWrap.innerHTML = "";
     const gridH = getComputedStyle(document.documentElement).getPropertyValue("--gridH");
 
-    for (const d of state.days) {
+    for (const d of daysToRender) {
       const col = document.createElement("div");
       col.className = "col";
       col.dataset.date = d.date;
@@ -1720,8 +1828,13 @@
 
       card.addEventListener("pointerdown", (ev) => {
         ev.stopPropagation();
+      });
+
+      card.addEventListener("click", async (ev) => {
+        ev.stopPropagation();
         ev.preventDefault();
-        openRequestModal_("edit", r);
+        const handled = await maybeApproveFromCard_(r);
+        if (!handled) openRequestModal_("edit", r);
       });
 
       col.appendChild(card);
@@ -1753,6 +1866,45 @@
     col.appendChild(dot);
   }
 
+  function renderAll_(keepScroll){
+    const beforeTop = keepScroll ? el.scroll.scrollTop : 0;
+    const beforeLeft = keepScroll ? el.scroll.scrollLeft : 0;
+
+    computeColWidth_();
+    renderStructure_();
+    clearBookings_();
+    renderBookings_();
+    renderRequests_();
+    renderNowLine_();
+
+    if (keepScroll) {
+      el.scroll.scrollTop = beforeTop;
+      el.scroll.scrollLeft = beforeLeft;
+    }
+  }
+
+  async function shiftView_(dir){
+    const direction = dir >= 0 ? 1 : -1;
+
+    if (state.viewMode === "week") {
+      const d = addDaysYmd_(state.anchorDate || toDateStrLocal_(new Date()), direction * 7);
+      await loadWeek_(d, true);
+      return;
+    }
+
+    const base = state.viewStartDate || state.anchorDate || (state.days[0] && state.days[0].date) || toDateStrLocal_(new Date());
+    const target = addDaysYmd_(base, direction);
+    const withinLoaded = state.days.some(d => d.date === target);
+
+    if (withinLoaded) {
+      state.viewStartDate = target;
+      renderAll_(true);
+      return;
+    }
+
+    await loadWeek_(target, true, target);
+  }
+
   function scrollToNow_(){
     const today = toDateStrLocal_(new Date());
     const col = el.colsWrap.querySelector(`.col[data-date="${today}"]`);
@@ -1776,6 +1928,7 @@
       if (!res || !res.ok) throw new Error(res && res.message ? res.message : "初期化に失敗しました");
 
       state.config = res.data.config;
+      state.adminEnabled = (typeof res.data.adminEnabled === "boolean") ? res.data.adminEnabled : true;
       state.slotPxBase = computeSlotPxBase_();
       state.resources = res.data.resources || [];
       state.teacherId = res.data.teacherId || (state.resources[0] && state.resources[0].resourceId) || "";
@@ -1785,7 +1938,10 @@
       state.days = normalizeDays_(res.data.days || []);
       state.bookings = res.data.bookings || [];
       state.requests = res.data.requests || [];
-      state.isAdmin = !!res.data.isAdmin;
+      state.isAdmin = !!res.data.isAdmin && !!state.adminEnabled;
+      if (!state.isAdmin) state.adminKey = "";
+
+      updateAdminToggleUI_();
 
       const t = state.resources.find(r => r.resourceId === state.teacherId);
       state.teacherName = t ? (t.resourceName || "") : "";
@@ -1796,26 +1952,23 @@
 
       const initMode = (state._initialModeParam === "request" || !state.isAdmin) ? "request" : "schedule";
       setMode_(initMode);
+      setViewMode_("week");
 
       enforceFixedStudentUI_();
 
-      computeColWidth_();
       applyConfigToCSS_();
-      renderStructure_();
+      state.viewStartDate = state.anchorDate;
+      renderAll_(false);
 
       el.datePicker.value = state.anchorDate;
 
-      clearBookings_();
-      renderBookings_();
-      renderRequests_();
-      renderNowLine_();
       scrollToNow_();
     } catch (err) {
       toast(String(err && err.message ? err.message : err));
     }
   }
 
-  async function loadWeek_(anchorDateStr, keepScroll){
+  async function loadWeek_(anchorDateStr, keepScroll, viewStartDate){
     try {
       const beforeTop = el.scroll.scrollTop;
       const beforeLeft = el.scroll.scrollLeft;
@@ -1830,15 +1983,20 @@
       state.days = normalizeDays_(res.data.days || []);
       state.bookings = res.data.bookings || [];
       state.requests = res.data.requests || [];
-      state.isAdmin = !!res.data.isAdmin;
+      state.adminEnabled = (typeof res.data.adminEnabled === "boolean") ? res.data.adminEnabled : state.adminEnabled;
+      state.isAdmin = !!res.data.isAdmin && !!state.adminEnabled;
+      if (!state.isAdmin) state.adminKey = "";
       el.newBtn.style.display = state.isAdmin ? "" : "none";
 
-      computeColWidth_();
-      renderStructure_();
-      clearBookings_();
-      renderBookings_();
-      renderRequests_();
-      renderNowLine_();
+      updateAdminToggleUI_();
+
+      if (viewStartDate) {
+        state.viewStartDate = viewStartDate;
+      } else if (state.viewMode === "week") {
+        state.viewStartDate = state.anchorDate;
+      }
+
+      renderAll_(keepScroll);
 
       if (keepScroll) {
         el.scroll.scrollTop = beforeTop;
@@ -1856,13 +2014,8 @@
     resizeTimer_ = setTimeout(() => {
       if (!state.config) return;
       state.slotPxBase = computeSlotPxBase_();
-      computeColWidth_();
       applyConfigToCSS_();
-      renderStructure_();
-      clearBookings_();
-      renderBookings_();
-      renderRequests_();
-      renderNowLine_();
+      renderAll_(true);
     }, 120);
   }
 
@@ -1977,6 +2130,7 @@
     try {
       validateModalLive_();
       if (el.saveBtn.disabled) return;
+      if (!state.isAdmin || !state.adminEnabled) { showAdminDisabled_(); return; }
 
       const payload = {
         resourceId: el.mResource.value.trim(),
@@ -2000,6 +2154,7 @@
         res = await runGAS("addBooking", state.adminKey, payload);
       }
 
+      if (handleAdminGuardFailure_(res)) return;
       if (!res || !res.ok) throw new Error(res && res.message ? res.message : "保存に失敗しました");
 
       closeModal_();
@@ -2019,10 +2174,12 @@
 
   async function confirmDelete_(){
     try {
+      if (!state.isAdmin || !state.adminEnabled) { showAdminDisabled_(); return; }
       el.confirmDeleteBtn.disabled = true;
       el.confirmDeleteBtn.textContent = "削除中…";
 
       const res = await runGAS("deleteBooking", state.adminKey, state.editingId);
+      if (handleAdminGuardFailure_(res)) return;
       if (!res || !res.ok) throw new Error(res && res.message ? res.message : "削除に失敗しました");
 
       closeModal_();
@@ -2047,6 +2204,7 @@
         return;
       }
       if (!file) return;
+      if (!state.isAdmin || !state.adminEnabled) { showAdminDisabled_(); return; }
 
       el.pdfUploadBtn.disabled = true;
       el.pdfUploadBtn.textContent = "アップロード中…";
@@ -2063,6 +2221,7 @@
       });
 
       const res = await runGAS("uploadBookingPdf", state.adminKey, state.editingId, file.name, base64);
+      if (handleAdminGuardFailure_(res)) return;
       if (!res || !res.ok) throw new Error(res && res.message ? res.message : "アップロードに失敗しました");
 
       // state反映
@@ -2359,10 +2518,12 @@
   async function approveRequest_(){
     try {
       if (!state.editingReqId) return;
+      if (!state.adminEnabled) { showAdminDisabled_(); return; }
       el.reqApproveBtn.disabled = true;
       el.reqApproveBtn.textContent = "確定中…";
 
       const res = await runGAS("approveRequest", state.adminKey, state.editingReqId);
+      if (handleAdminGuardFailure_(res)) return;
       if (!res || !res.ok) throw new Error(res && res.message ? res.message : "確定に失敗しました");
 
       closeRequestModal_();
@@ -2379,11 +2540,13 @@
   async function rejectRequest_(){
     try {
       if (!state.editingReqId) return;
+      if (!state.adminEnabled) { showAdminDisabled_(); return; }
       const reason = prompt("却下理由（任意）", "");
       el.reqRejectBtn.disabled = true;
       el.reqRejectBtn.textContent = "却下中…";
 
       const res = await runGAS("rejectRequest", state.adminKey, state.editingReqId, reason || "");
+      if (handleAdminGuardFailure_(res)) return;
       if (!res || !res.ok) throw new Error(res && res.message ? res.message : "却下に失敗しました");
 
       closeRequestModal_();
@@ -2394,6 +2557,36 @@
     } finally {
       el.reqRejectBtn.disabled = false;
       el.reqRejectBtn.textContent = "却下";
+    }
+  }
+
+  async function maybeApproveFromCard_(req){
+    if (!state.isAdmin || !req || !req.id) return false;
+    if (!state.adminEnabled) { showAdminDisabled_(); return true; }
+    const status = String(req.status || "pending");
+    if (status !== "pending") return false;
+    if (state.requestBusy) {
+      toast("処理中です…");
+      return true;
+    }
+
+    const ok = confirm(`管理者モードです。この希望を授業として確定しますか？\n${req.date} ${req.startTime}–${req.endTime}`);
+    if (!ok) return false;
+
+    try {
+      state.requestBusy = true;
+      const res = await runGAS("approveRequest", state.adminKey, req.id);
+      if (handleAdminGuardFailure_(res)) return true;
+      if (!res || !res.ok) throw new Error(res && res.message ? res.message : "確定に失敗しました");
+
+      toast("希望を授業として確定しました");
+      await loadWeek_(state.anchorDate || toDateStrLocal_(new Date()), true);
+      return true;
+    } catch (err) {
+      toast(String(err && err.message ? err.message : err));
+      return false;
+    } finally {
+      state.requestBusy = false;
     }
   }
 
@@ -2563,17 +2756,50 @@
     el.datePicker.addEventListener("change", async () => {
       const d = el.datePicker.value;
       if (!d) return;
-      await loadWeek_(d, true);
+      await loadWeek_(d, true, state.viewMode === "day" ? d : undefined);
     });
 
     el.prevWeekBtn.addEventListener("click", async () => {
-      const d = addDaysYmd_(state.anchorDate || toDateStrLocal_(new Date()), -7);
-      await loadWeek_(d, true);
+      await shiftView_(-1);
     });
 
     el.nextWeekBtn.addEventListener("click", async () => {
-      const d = addDaysYmd_(state.anchorDate || toDateStrLocal_(new Date()), 7);
-      await loadWeek_(d, true);
+      await shiftView_(1);
+    });
+
+    el.adminToggleBtn.addEventListener("click", async () => {
+      if (!state.isAdmin && !state.adminEnabled) {
+        showAdminDisabled_();
+        return;
+      }
+      if (state.isAdmin) {
+        state.adminKey = "";
+        state.isAdmin = false;
+        updateAdminToggleUI_();
+        el.newBtn.style.display = "none";
+        await loadWeek_(state.anchorDate || toDateStrLocal_(new Date()), true);
+        toast("管理者モードを終了しました");
+        return;
+      }
+
+      const pwd = prompt("管理者パスワードを入力してください");
+      if (pwd === null) return;
+
+      const res = await runGAS("adminLogin", pwd);
+      if (handleAdminGuardFailure_(res)) return;
+      if (!res || !res.ok || !res.adminToken) {
+        const msg = (res && res.message) ? res.message : "ログインに失敗しました";
+        toast(msg);
+        return;
+      }
+
+      state.adminEnabled = true;
+      state.adminKey = res.adminToken;
+      state.isAdmin = true;
+      updateAdminToggleUI_();
+      el.newBtn.style.display = "";
+      toast("管理者モードに切り替えました");
+      await loadWeek_(state.anchorDate || toDateStrLocal_(new Date()), true);
     });
 
     el.modeScheduleBtn.addEventListener("click", () => {
@@ -2584,6 +2810,44 @@
     el.modeRequestBtn.addEventListener("click", () => {
       setMode_("request");
       toast("希望提出モード");
+    });
+
+    el.viewWeekBtn.addEventListener("click", () => {
+      setViewMode_("week");
+      state.viewStartDate = state.anchorDate;
+      renderAll_(true);
+    });
+
+    el.viewDayBtn.addEventListener("click", () => {
+      setViewMode_("day");
+      state.viewStartDate = state.viewStartDate || state.anchorDate || (state.days[0] && state.days[0].date) || "";
+      renderAll_(true);
+    });
+
+    el.scroll.addEventListener("touchstart", (ev) => {
+      if (state.viewMode !== "day") return;
+      touchHandled = false;
+      const t = ev.touches && ev.touches[0];
+      touchStartX = t ? t.clientX : null;
+    });
+
+    el.scroll.addEventListener("touchmove", async (ev) => {
+      if (state.viewMode !== "day") return;
+      if (touchStartX === null || touchHandled) return;
+      const t = ev.touches && ev.touches[0];
+      if (!t) return;
+      const dx = t.clientX - touchStartX;
+      if (Math.abs(dx) > 50) {
+        touchHandled = true;
+        ev.preventDefault();
+        await shiftView_(dx < 0 ? 1 : -1);
+        touchStartX = null;
+      }
+    });
+
+    el.scroll.addEventListener("touchend", () => {
+      touchStartX = null;
+      touchHandled = false;
     });
 
     el.newBtn.addEventListener("click", () => {
