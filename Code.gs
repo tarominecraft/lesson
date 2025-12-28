@@ -37,6 +37,17 @@ function getAdminPassword_() {
   return PropertiesService.getScriptProperties().getProperty('ADMIN_PASSWORD') || '';
 }
 
+function adminEnabled_() {
+  return !!getAdminPassword_();
+}
+
+function assertAdminConfigured_() {
+  if (adminEnabled_()) return;
+  const err = new Error('管理者パスワードが設定されていません');
+  err.code = 'ADMIN_NOT_CONFIGURED';
+  throw err;
+}
+
 function adminTokenCacheKey_(token) {
   return `adminToken:${token}`;
 }
@@ -53,7 +64,12 @@ function isAdminToken_(adminToken) {
 }
 
 function assertAdminToken_(adminToken) {
-  if (!isAdminToken_(adminToken)) throw new Error('権限がありません（管理者トークン）');
+  assertAdminConfigured_();
+  if (!isAdminToken_(adminToken)) {
+    const err = new Error('権限がありません（管理者トークン）');
+    err.code = 'ADMIN_TOKEN_INVALID';
+    throw err;
+  }
 }
 
 
@@ -63,7 +79,7 @@ function assertAdminToken_(adminToken) {
 function adminLogin(password) {
   try {
     const expected = getAdminPassword_();
-    if (!expected) return { ok: false, message: '管理者パスワードが設定されていません' };
+    if (!expected) return { ok: false, code: 'ADMIN_NOT_CONFIGURED', message: '管理者パスワードが設定されていません' };
 
     if (String(password || '') !== expected) {
       return { ok: false, message: 'パスワードが違います' };
@@ -97,7 +113,7 @@ function getInit(adminKey) {
 
     const isAdmin = isAdminToken_(adminKey);
 
-    return ok_({ resources, config, today, teacherId, weekStart, days, bookings, isAdmin });
+    return ok_({ resources, config, today, teacherId, weekStart, days, bookings, isAdmin, adminEnabled: adminEnabled_() });
   } catch (err) {
     return ng_(err);
   }
@@ -127,7 +143,7 @@ function getWeek(anchorDateStr, clientId, adminKey) {
     const cid = String(clientId || '').trim();
     const requests = listRequestsRange_(teacherId, weekStart, end, isAdmin ? '' : cid);
 
-    return ok_({ weekStart, days, bookings, requests, isAdmin });
+    return ok_({ weekStart, days, bookings, requests, isAdmin, adminEnabled: adminEnabled_() });
   } catch (err) {
     return ng_(err);
   }
@@ -1378,5 +1394,6 @@ function ok_(data) {
 
 function ng_(err) {
   const msg = (err && err.message) ? err.message : String(err);
-  return { ok: false, message: msg };
+  const code = (err && err.code) ? String(err.code) : '';
+  return { ok: false, message: msg, code };
 }

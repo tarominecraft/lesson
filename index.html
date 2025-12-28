@@ -1159,6 +1159,7 @@
     slotPxBase: 44,
     adminKey: "",
     isAdmin: false,
+    adminEnabled: true,
     clientId: "",
     requestBusy: false,
     mode: "schedule", // schedule | request
@@ -1302,9 +1303,40 @@
 
   function updateAdminToggleUI_(){
     const on = !!state.isAdmin;
-    el.adminToggleBtn.textContent = on ? "管理者モード中" : "管理者モード";
+    const adminDisabled = !state.adminEnabled;
+    el.adminToggleBtn.textContent = on ? "管理者モード中" : (adminDisabled ? "管理者未設定" : "管理者モード");
     el.adminToggleBtn.classList.toggle("primary", on);
     el.adminToggleBtn.setAttribute("aria-pressed", on ? "true" : "false");
+    el.adminToggleBtn.disabled = adminDisabled && !on;
+    el.adminToggleBtn.title = adminDisabled ? "管理者パスワードが未設定です" : "";
+  }
+
+  function showAdminDisabled_(){
+    toast([
+      "管理者パスワードが未設定です。管理者機能は無効です。",
+      "Apps Script の Script Properties に ADMIN_PASSWORD を設定してください。"
+    ].join(" "));
+  }
+
+  function handleAdminGuardFailure_(res){
+    if (res && res.code === "ADMIN_NOT_CONFIGURED") {
+      state.adminEnabled = false;
+      state.isAdmin = false;
+      state.adminKey = "";
+      el.newBtn.style.display = "none";
+      updateAdminToggleUI_();
+      showAdminDisabled_();
+      return true;
+    }
+    if (res && res.code === "ADMIN_TOKEN_INVALID") {
+      state.isAdmin = false;
+      state.adminKey = "";
+      el.newBtn.style.display = "none";
+      updateAdminToggleUI_();
+      toast("管理者トークンの有効期限が切れました。再度ログインしてください。");
+      return true;
+    }
+    return false;
   }
 
   // -----------------
@@ -1896,6 +1928,7 @@
       if (!res || !res.ok) throw new Error(res && res.message ? res.message : "初期化に失敗しました");
 
       state.config = res.data.config;
+      state.adminEnabled = (typeof res.data.adminEnabled === "boolean") ? res.data.adminEnabled : true;
       state.slotPxBase = computeSlotPxBase_();
       state.resources = res.data.resources || [];
       state.teacherId = res.data.teacherId || (state.resources[0] && state.resources[0].resourceId) || "";
@@ -1905,7 +1938,7 @@
       state.days = normalizeDays_(res.data.days || []);
       state.bookings = res.data.bookings || [];
       state.requests = res.data.requests || [];
-      state.isAdmin = !!res.data.isAdmin;
+      state.isAdmin = !!res.data.isAdmin && !!state.adminEnabled;
       if (!state.isAdmin) state.adminKey = "";
 
       updateAdminToggleUI_();
@@ -1950,7 +1983,8 @@
       state.days = normalizeDays_(res.data.days || []);
       state.bookings = res.data.bookings || [];
       state.requests = res.data.requests || [];
-      state.isAdmin = !!res.data.isAdmin;
+      state.adminEnabled = (typeof res.data.adminEnabled === "boolean") ? res.data.adminEnabled : state.adminEnabled;
+      state.isAdmin = !!res.data.isAdmin && !!state.adminEnabled;
       if (!state.isAdmin) state.adminKey = "";
       el.newBtn.style.display = state.isAdmin ? "" : "none";
 
@@ -2096,6 +2130,7 @@
     try {
       validateModalLive_();
       if (el.saveBtn.disabled) return;
+      if (!state.isAdmin || !state.adminEnabled) { showAdminDisabled_(); return; }
 
       const payload = {
         resourceId: el.mResource.value.trim(),
@@ -2119,6 +2154,7 @@
         res = await runGAS("addBooking", state.adminKey, payload);
       }
 
+      if (handleAdminGuardFailure_(res)) return;
       if (!res || !res.ok) throw new Error(res && res.message ? res.message : "保存に失敗しました");
 
       closeModal_();
@@ -2138,10 +2174,12 @@
 
   async function confirmDelete_(){
     try {
+      if (!state.isAdmin || !state.adminEnabled) { showAdminDisabled_(); return; }
       el.confirmDeleteBtn.disabled = true;
       el.confirmDeleteBtn.textContent = "削除中…";
 
       const res = await runGAS("deleteBooking", state.adminKey, state.editingId);
+      if (handleAdminGuardFailure_(res)) return;
       if (!res || !res.ok) throw new Error(res && res.message ? res.message : "削除に失敗しました");
 
       closeModal_();
@@ -2166,6 +2204,7 @@
         return;
       }
       if (!file) return;
+      if (!state.isAdmin || !state.adminEnabled) { showAdminDisabled_(); return; }
 
       el.pdfUploadBtn.disabled = true;
       el.pdfUploadBtn.textContent = "アップロード中…";
@@ -2182,6 +2221,7 @@
       });
 
       const res = await runGAS("uploadBookingPdf", state.adminKey, state.editingId, file.name, base64);
+      if (handleAdminGuardFailure_(res)) return;
       if (!res || !res.ok) throw new Error(res && res.message ? res.message : "アップロードに失敗しました");
 
       // state反映
@@ -2478,10 +2518,12 @@
   async function approveRequest_(){
     try {
       if (!state.editingReqId) return;
+      if (!state.adminEnabled) { showAdminDisabled_(); return; }
       el.reqApproveBtn.disabled = true;
       el.reqApproveBtn.textContent = "確定中…";
 
       const res = await runGAS("approveRequest", state.adminKey, state.editingReqId);
+      if (handleAdminGuardFailure_(res)) return;
       if (!res || !res.ok) throw new Error(res && res.message ? res.message : "確定に失敗しました");
 
       closeRequestModal_();
@@ -2498,11 +2540,13 @@
   async function rejectRequest_(){
     try {
       if (!state.editingReqId) return;
+      if (!state.adminEnabled) { showAdminDisabled_(); return; }
       const reason = prompt("却下理由（任意）", "");
       el.reqRejectBtn.disabled = true;
       el.reqRejectBtn.textContent = "却下中…";
 
       const res = await runGAS("rejectRequest", state.adminKey, state.editingReqId, reason || "");
+      if (handleAdminGuardFailure_(res)) return;
       if (!res || !res.ok) throw new Error(res && res.message ? res.message : "却下に失敗しました");
 
       closeRequestModal_();
@@ -2518,6 +2562,7 @@
 
   async function maybeApproveFromCard_(req){
     if (!state.isAdmin || !req || !req.id) return false;
+    if (!state.adminEnabled) { showAdminDisabled_(); return true; }
     const status = String(req.status || "pending");
     if (status !== "pending") return false;
     if (state.requestBusy) {
@@ -2531,6 +2576,7 @@
     try {
       state.requestBusy = true;
       const res = await runGAS("approveRequest", state.adminKey, req.id);
+      if (handleAdminGuardFailure_(res)) return true;
       if (!res || !res.ok) throw new Error(res && res.message ? res.message : "確定に失敗しました");
 
       toast("希望を授業として確定しました");
@@ -2722,6 +2768,10 @@
     });
 
     el.adminToggleBtn.addEventListener("click", async () => {
+      if (!state.isAdmin && !state.adminEnabled) {
+        showAdminDisabled_();
+        return;
+      }
       if (state.isAdmin) {
         state.adminKey = "";
         state.isAdmin = false;
@@ -2736,12 +2786,14 @@
       if (pwd === null) return;
 
       const res = await runGAS("adminLogin", pwd);
+      if (handleAdminGuardFailure_(res)) return;
       if (!res || !res.ok || !res.adminToken) {
         const msg = (res && res.message) ? res.message : "ログインに失敗しました";
         toast(msg);
         return;
       }
 
+      state.adminEnabled = true;
       state.adminKey = res.adminToken;
       state.isAdmin = true;
       updateAdminToggleUI_();
